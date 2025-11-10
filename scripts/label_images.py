@@ -11,6 +11,7 @@ from pathlib import Path
 import webbrowser
 import time
 import json
+import shutil
 
 logging.basicConfig(
     level=logging.INFO,
@@ -67,6 +68,77 @@ class CVATLabeling(LabelingTool):
         return True
 
 
+class BatchUploadHelper:
+    """Helper class for managing batch uploads to Label Studio"""
+    
+    @staticmethod
+    def create_batch_subdirs(train_dir: str, batch_size: int = 100) -> dict:
+        """Create subdirectories for batch uploads
+        
+        Args:
+            train_dir: Path to training images directory
+            batch_size: Number of images per batch
+            
+        Returns:
+            Dictionary mapping batch number to list of image files
+        """
+        train_path = Path(train_dir)
+        images = sorted(
+            [f for f in train_path.glob('*') if f.suffix.lower() in ['.jpg', '.png', '.jpeg']]
+        )
+        
+        batches = {}
+        for i, image in enumerate(images):
+            batch_num = i // batch_size
+            if batch_num not in batches:
+                batches[batch_num] = []
+            batches[batch_num].append(image)
+        
+        return batches
+    
+    @staticmethod
+    def print_upload_guide(image_count: int, batch_size: int = 100):
+        """Print detailed batch upload instructions"""
+        num_batches = (image_count + batch_size - 1) // batch_size
+        
+        logger.info("\n" + "="*70)
+        logger.info("⚠️  LARGE DATASET DETECTED - BATCH UPLOAD REQUIRED")
+        logger.info("="*70)
+        logger.info(f"\nYou have {image_count} images to label.")
+        logger.info(f"Uploading all at once causes Django streaming errors.")
+        logger.info(f"\n✅ Solution: Upload in batches of {batch_size} images")
+        logger.info(f"   This requires approximately {num_batches} upload sessions")
+        logger.info("\n📋 STEP-BY-STEP WORKFLOW:")
+        logger.info("="*70)
+        
+        batch_num = 1
+        for i in range(0, image_count, batch_size):
+            end = min(i + batch_size, image_count)
+            logger.info(f"\n   Batch {batch_num}: Images {i+1} to {end}")
+            batch_num += 1
+        
+        logger.info("\n" + "="*70)
+        logger.info("📝 UPLOAD INSTRUCTIONS:")
+        logger.info("="*70)
+        logger.info("\n1. Label Studio opens at http://localhost:8080")
+        logger.info("2. Create a NEW project or use existing")
+        logger.info("3. Go to Data tab → Upload Files")
+        logger.info("4. Use DRAG & DROP (more reliable than file picker):")
+        logger.info(f"   - Drag batch 1 images ({batch_size} files)")
+        logger.info("   - Wait for upload to complete (shows progress bar)")
+        logger.info("   - Press Enter in terminal to continue")
+        logger.info(f"   - Repeat for next batch")
+        logger.info("\n5. After ALL images uploaded:")
+        logger.info("   - Annotate as normal")
+        logger.info("   - Export in YOLO format")
+        logger.info("   - Place .txt files in dataset/labels/train/")
+        logger.info("\n" + "="*70)
+        logger.info("\n💡 If you still get errors:")
+        logger.info("   - Use SMALLER batches (try 50 images at a time)")
+        logger.info("   - Or switch to Roboflow (cloud-based, no upload limit)")
+        logger.info("="*70 + "\n")
+
+
 class AnnotationLabeling(LabelingTool):
     """Label Studio - web-based annotation tool (DEFAULT)"""
     
@@ -84,6 +156,10 @@ class AnnotationLabeling(LabelingTool):
         logger.info("Label Studio - Web-based Annotation Tool (Default)")
         logger.info("="*60)
         logger.info(f"\nFound {self.image_count} images to label in {self.train_dir}")
+        
+        # For large datasets, show batch upload guide
+        if self.image_count > 500:
+            BatchUploadHelper.print_upload_guide(self.image_count, batch_size=100)
         
         try:
             # Import subprocess (doesn't require label_studio to be pre-installed)
@@ -108,6 +184,15 @@ class AnnotationLabeling(LabelingTool):
             os.environ['LABEL_STUDIO_DATA_UPLOAD_MAX_NUMBER_FILES'] = '10000'
             os.environ['DJANGO_FILE_UPLOAD_MAX_MEMORY_SIZE'] = '5242880'
             os.environ['DATA_UPLOAD_MAX_MEMORY_SIZE'] = '5242880'
+            os.environ['DJANGO_MIDDLEWARE_APPEND'] = 'django.middleware.security.SecurityMiddleware'
+            os.environ['CLIENT_MAX_BODY_SIZE'] = '100m'
+            os.environ['NGINX_CLIENT_MAX_BODY_SIZE'] = '100m'
+            
+            # For large datasets (>500 images), add extra settings
+            if self.image_count > 500:
+                os.environ['LABEL_STUDIO_DATA_UPLOAD_MAX_MEMORY_SIZE'] = '52428800'  # 50MB
+                os.environ['UWSGI_HTTP_TIMEOUT'] = '600'
+                os.environ['LABEL_STUDIO_WEB_LOCKED_UI'] = 'false'
             
             logger.info("\n🚀 Starting Label Studio server...")
             logger.info("   This will open http://localhost:8080 in your browser")
@@ -116,6 +201,7 @@ class AnnotationLabeling(LabelingTool):
             logger.info("   2. Create a new project")
             logger.info("   3. Upload images from:")
             logger.info(f"      {self.train_dir}")
+            logger.info("      (Use DRAG & DROP for best results)")
             logger.info("   4. Create bounding box annotations")
             logger.info("   5. Export in YOLO format")
             logger.info("   6. Place .txt files in dataset/labels/train/")

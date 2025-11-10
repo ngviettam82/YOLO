@@ -2,42 +2,101 @@
 
 ## Error: "You cannot access body after reading from request's data stream"
 
-This is a known issue with Label Studio when uploading large batches of files. Here are several solutions:
+**This happens when uploading very large image batches (500+ images).** Label Studio's Django server cannot handle the request stream properly.
+
+### ⚠️ **For 1000+ Images: Mandatory Batch Upload**
+
+If you have 1000-1400 images, **you MUST use batch uploads**. Here are solutions in order of effectiveness:
 
 ---
 
-## ✅ Solution 1: Upload Images in Smaller Batches (Recommended)
+## ✅ Solution 1: Upload Images in Smaller Batches (Recommended for 1000+ images)
 
-Instead of uploading all 273 images at once:
+**This is the most reliable approach for large datasets.**
+
+### Batch Upload Strategy:
 
 1. **Open Label Studio** at `http://localhost:8080`
-2. **Create a new project**
-3. **Upload in batches of 50-100 images:**
-   - First batch: images 1-50
-   - Wait for processing
-   - Second batch: images 51-100
-   - Continue until all images uploaded
+2. **Create ONE project** (don't create multiple projects)
+3. **Upload images in batches:**
 
-**Why this works:** Avoids overwhelming the server with too many files at once.
+#### For 1400 images:
+- **Batch 1:** Images 1-100 (drag & drop all at once)
+- Wait for upload progress bar to complete (shows ✅)
+- **Batch 2:** Images 101-200
+- Wait for completion
+- Continue until all batches uploaded
+
+### Step-by-Step Upload Process:
+
+```
+Batch 1: Images 1-100
+├─ Drag all 100 images to Label Studio upload area
+├─ Wait for progress bar: ████████████████ 100%
+├─ Should show "100 images added"
+└─ Press Enter in terminal to continue
+
+Batch 2: Images 101-200
+├─ Drag next 100 images
+├─ Wait for progress
+├─ Should now show "200 images total"
+└─ Continue...
+
+(Repeat until all 1400 images uploaded)
+```
+
+### Why Batch Upload Works:
+
+✅ Each upload is smaller (100 images = ~300MB)  
+✅ Django can process request stream properly  
+✅ No "cannot access body" errors  
+✅ Reliable and consistent  
+
+### 💡 Pro Tips:
+
+- **Use drag-and-drop** (more reliable than file picker)
+- **Upload 100 images at a time** (sweet spot for Django)
+- **Wait between batches** (let server finish processing)
+- **Don't close browser** during upload
+- **Check upload progress bar** before continuing
 
 ---
 
-## ✅ Solution 2: Use Drag-and-Drop Upload
+## ✅ Solution 2: Use Smaller Batch Size (If 100 fails)
 
-Instead of using the file picker:
-
-1. **Open Label Studio**
-2. **Go to project Data tab**
-3. **Drag and drop images directly** into the upload area
-4. Upload in smaller batches (50-100 at a time)
-
-**Why this works:** Drag-and-drop often bypasses the problematic file picker mechanism.
+If you still get errors with 100 images per batch, reduce to 50:
 
 ---
 
-## ✅ Solution 3: Use Alternative Tool - Roboflow
+## ✅ Solution 2: Use Smaller Batch Size (If 100 fails)
 
-**If Label Studio continues to have issues, use Roboflow instead:**
+If you still get errors with 100 images per batch, reduce to 50:
+
+1. Upload 50 images at a time
+2. Monitor browser console for errors
+3. If still failing, try 25 at a time
+4. Continue reducing until uploads work
+
+---
+
+## ✅ Solution 3: Clear Browser Cache & Restart
+
+Sometimes browser cache causes issues:
+
+1. **Close Label Studio browser tab**
+2. **Clear browser cache** (Ctrl+Shift+Delete)
+3. **Restart Label Studio:**
+   ```batch
+   .venv\Scripts\activate.bat
+   pip uninstall label-studio -y
+   pip install label-studio==1.11.0
+   label-studio
+   ```
+4. **Try uploading again** with smaller batch size
+
+---
+
+## ✅ Solution 4: Use Roboflow (Cloud-Based - No Upload Limits)
 
 ```batch
 python scripts\label_images.py --tool roboflow

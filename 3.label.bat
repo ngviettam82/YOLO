@@ -60,6 +60,17 @@ set DJANGO_DATA_UPLOAD_MAX_NUMBER_FILES=10000
 set DJANGO_FILE_UPLOAD_MAX_MEMORY_SIZE=5242880
 set DATA_UPLOAD_MAX_MEMORY_SIZE=5242880
 set LABEL_STUDIO_DATA_UPLOAD_MAX_NUMBER_FILES=10000
+set DJANGO_MIDDLEWARE_APPEND=django.middleware.security.SecurityMiddleware
+set CLIENT_MAX_BODY_SIZE=100m
+set NGINX_CLIENT_MAX_BODY_SIZE=100m
+
+REM For very large datasets (1000+ images), add extra memory settings
+if !count! geq 1000 (
+    set LABEL_STUDIO_DATA_UPLOAD_MAX_MEMORY_SIZE=52428800
+    set UWSGI_HTTP_TIMEOUT=600
+    set LABEL_STUDIO_WEB_LOCKED_UI=false
+    echo Note: Using extended settings for large dataset
+)
 
 REM Default to Label Studio (web-based, reliable, no desktop GUI issues)
 echo Using Label Studio as the default annotation tool
