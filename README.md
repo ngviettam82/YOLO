@@ -44,51 +44,78 @@ YOLO/
 │   ├── label_images.py     # Launch annotation tools
 │   ├── validate_model.py   # Model validation
 │   ├── export_model.py     # Model export
+│   ├── train_optimized.py  # Main training script
+│   ├── check_setup.py      # Verify installation
 │   └── inference.py        # Run inference
 ├── utils/                   # Helper utilities
 │   └── dataset_utils.py    # Dataset utilities
-├── examples/                # Example scripts
-│   └── dataset_example.py  # Dataset preparation example
 ├── docs/                   # 📚 Documentation
 │   ├── INSTALLATION.md     # Installation guide
 │   ├── DATASET_GUIDE.md    # Dataset preparation
 │   ├── TRAINING_GUIDE.md   # Training guide
 │   ├── QUICK_REFERENCE.md  # Quick reference
 │   └── RTX5080_OPTIMIZED.md # GPU optimization
-├── train_optimized.py      # Main training script
-├── quickstart_dataset.ps1  # Quick dataset preparation
-├── quickstart_label.ps1    # Quick image labeling
-├── quickstart_train.ps1    # Quick training script
+├── install.bat             # 🚀 Setup environment
+├── quickstart_dataset.bat  # 🚀 Prepare dataset
+├── quickstart_label.bat    # 🚀 Label images
+├── quickstart_train.bat    # 🚀 Start training
 └── README.md               # This file
 ```
 
 ## 🚀 Quick Start
 
-1. **[Install](docs/INSTALLATION.md)** - Setup environment
-   ```powershell
-   .\install.ps1
-   ```
+### Option 1: Double-click BAT Files (Easiest - Recommended ⭐)
 
-2. **[Prepare Dataset](docs/DATASET_GUIDE.md)** - Split and organize images
-   ```powershell
-   .\quickstart_dataset.ps1
-   ```
+1. **Double-click** `install.bat` - Setup environment (Python, PyTorch, dependencies)
+2. **Double-click** `quickstart_dataset.bat` - Prepare and split dataset
+3. **Double-click** `quickstart_label.bat` - Label images with LabelImg
+4. **Double-click** `quickstart_train.bat` - Start training with RTX 5080 optimized settings
 
-3. **[Label Images](docs/DATASET_GUIDE.md)** - Annotate training images
-   ```powershell
-   .\quickstart_label.ps1
-   ```
-   Or with specific tool:
-   ```powershell
-   .\quickstart_label.ps1 -Tool labelimg
-   ```
+That's it! All files will activate the virtual environment and run automatically.
 
-4. **[Train Model](docs/TRAINING_GUIDE.md)** - Start training with RTX 5080 settings
-   ```powershell
-   .\quickstart_train.ps1
-   ```
+### Option 2: Command Line (Manual Control)
 
-5. **[Commands Reference](docs/QUICK_REFERENCE.md)** - See all available commands
+**Step 1: Setup Environment**
+```bash
+install.bat
+```
+Or manually:
+```bash
+python3.10 -m venv .venv
+.venv\Scripts\activate.bat
+pip install -r requirements.txt
+python scripts\check_setup.py
+```
+
+**Step 2: Prepare Dataset**
+```bash
+quickstart_dataset.bat
+```
+Or manually:
+```bash
+.venv\Scripts\activate.bat
+python scripts\split_dataset.py --train 0.7 --val 0.2 --test 0.1
+```
+
+**Step 3: Label Images**
+```bash
+quickstart_label.bat
+```
+Or manually:
+```bash
+.venv\Scripts\activate.bat
+python scripts\label_images.py --tool labelimg
+```
+
+**Step 4: Train Model**
+```bash
+quickstart_train.bat
+```
+Or manually:
+```bash
+.venv\Scripts\activate.bat
+python scripts\train_optimized.py --data dataset/data.yaml --model yolo11m.pt --epochs 1000 --batch 64
+```
 
 ---
 
