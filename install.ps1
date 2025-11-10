@@ -101,7 +101,7 @@ Write-Host ""
 Write-Host "========================================"
 Write-Host "Step 4/4: Verifying installation..." -ForegroundColor Cyan
 Write-Host "========================================"
-python check_setup.py
+python scripts/check_setup.py
 Write-Host ""
 
 # Final message
@@ -110,14 +110,13 @@ Write-Host "Installation Complete!" -ForegroundColor Green
 Write-Host "========================================"
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Cyan
-Write-Host "1. Prepare your dataset in the 'dataset' folder"
-Write-Host "2. Create a dataset YAML file"
-Write-Host "3. Run: python train_optimized.py --data dataset/your_data.yaml"
+Write-Host "1. Prepare your dataset: .\scripts\quickstart_dataset.ps1"
+Write-Host "2. Train model: .\scripts\quickstart_train.ps1"
 Write-Host ""
 Write-Host "For detailed instructions, read:" -ForegroundColor Cyan
-Write-Host "- SETUP_COMPLETE.md"
-Write-Host "- RTX5080_OPTIMIZED.md"
-Write-Host "- TRAINING_GUIDE.md"
+Write-Host "- docs/INSTALLATION.md"
+Write-Host "- docs/DATASET_GUIDE.md"
+Write-Host "- docs/TRAINING_GUIDE.md"
 Write-Host ""
 Write-Host "Virtual environment is active. To deactivate, type: deactivate"
 Write-Host "To reactivate later, run: .\venv\Scripts\Activate.ps1"

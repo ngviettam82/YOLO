@@ -16,7 +16,7 @@ Fast command lookup and workflow overview.
    python scripts/label_images.py
 
 3. TRAIN                 → docs/TRAINING_GUIDE.md
-   python train_optimized.py --data dataset/data.yaml
+   python scripts/train_optimized.py --data dataset/data.yaml
 
 4. VALIDATE
    python scripts/validate_model.py --model runs/train_xxx/weights/best.pt --data dataset/data.yaml
@@ -50,19 +50,19 @@ python scripts/label_images.py --config --num-classes 3
 ### Training
 ```powershell
 # Basic training
-python train_optimized.py --data dataset/data.yaml
+python scripts/train_optimized.py --data dataset/data.yaml
 
 # Custom settings
-python train_optimized.py --data dataset/data.yaml --epochs 100 --batch 40 --imgsz 832
+python scripts/train_optimized.py --data dataset/data.yaml --epochs 100 --batch 40 --imgsz 832
 
 # Specific model
-python train_optimized.py --data dataset/data.yaml --model yolo11l.pt
+python scripts/train_optimized.py --data dataset/data.yaml --model yolo11l.pt
 
 # Resume training
-python train_optimized.py --data dataset/data.yaml --resume
+python scripts/train_optimized.py --data dataset/data.yaml --resume
 
 # Fresh start (no resume)
-python train_optimized.py --data dataset/data.yaml --no-resume
+python scripts/train_optimized.py --data dataset/data.yaml --no-resume
 ```
 
 ### Validation & Export
@@ -95,7 +95,7 @@ python scripts/inference.py --model runs/train_xxx/weights/best.pt --source 0 --
 ### Utilities
 ```powershell
 # Check setup
-python check_setup.py
+python scripts/check_setup.py
 
 # Monitor training with TensorBoard
 tensorboard --logdir runs/detect
@@ -127,7 +127,7 @@ tensorboard --logdir runs/detect
 
 **Quick Best-Balanced Command:**
 ```powershell
-python train_optimized.py --data dataset/data.yaml --epochs 200 --batch 40 --imgsz 832
+python scripts/train_optimized.py --data dataset/data.yaml --epochs 200 --batch 40 --imgsz 832
 ```
 
 ---

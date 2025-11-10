@@ -20,20 +20,20 @@ Before training, ensure:
 ### Basic Training
 
 ```powershell
-python train_optimized.py --data dataset/data.yaml
+python scripts/train_optimized.py --data dataset/data.yaml
 ```
 
 ### With Custom Settings
 
 ```powershell
 # 100 epochs, batch 40, image size 832
-python train_optimized.py --data dataset/data.yaml --epochs 100 --batch 40 --imgsz 832
+python scripts/train_optimized.py --data dataset/data.yaml --epochs 100 --batch 40 --imgsz 832
 
 # No resume (fresh start)
-python train_optimized.py --data dataset/data.yaml --no-resume
+python scripts/train_optimized.py --data dataset/data.yaml --no-resume
 
 # Specific model (yolo11s, yolo11m, yolo11l, yolo11x)
-python train_optimized.py --data dataset/data.yaml --model yolo11l.pt
+python scripts/train_optimized.py --data dataset/data.yaml --model yolo11l.pt
 ```
 
 ---
@@ -216,20 +216,20 @@ workers: 4             # Fewer workers
 
 ```powershell
 # Reduce batch size
-python train_optimized.py --data dataset/data.yaml --batch 8
+python scripts/train_optimized.py --data dataset/data.yaml --batch 8
 
 # Reduce image size
-python train_optimized.py --data dataset/data.yaml --imgsz 640
+python scripts/train_optimized.py --data dataset/data.yaml --imgsz 640
 ```
 
 ### Training Too Slow
 
 ```powershell
 # Increase batch size
-python train_optimized.py --data dataset/data.yaml --batch 64
+python scripts/train_optimized.py --data dataset/data.yaml --batch 64
 
 # Enable caching
-python train_optimized.py --data dataset/data.yaml --cache ram
+python scripts/train_optimized.py --data dataset/data.yaml --cache ram
 ```
 
 ### Low Accuracy
@@ -255,10 +255,10 @@ python train_optimized.py --data dataset/data.yaml --cache ram
 
 ```powershell
 # Train
-python train_optimized.py --data dataset/data.yaml
+python scripts/train_optimized.py --data dataset/data.yaml
 
 # Resume training
-python train_optimized.py --data dataset/data.yaml --resume
+python scripts/train_optimized.py --data dataset/data.yaml --resume
 
 # Validate
 python scripts/validate_model.py --model runs/train_xxx/weights/best.pt --data dataset/data.yaml

@@ -56,30 +56,34 @@ YOLO/
 │   ├── QUICK_REFERENCE.md  # Quick reference
 │   └── RTX5080_OPTIMIZED.md # GPU optimization
 ├── train_optimized.py      # Main training script
-├── manage_dataset.bat      # Dataset manager (Windows batch)
-├── manage_dataset.ps1      # Dataset manager (PowerShell)
+├── quickstart_dataset.ps1  # Quick dataset preparation
+├── quickstart_train.ps1    # Quick training script
 └── README.md               # This file
 ```
 
-## � Quick Start
+## 🚀 Quick Start
 
 1. **[Install](docs/INSTALLATION.md)** - Setup environment
    ```powershell
    .\install.ps1
    ```
 
-2. **[Prepare Dataset](docs/DATASET_GUIDE.md)** - Add and split images
+2. **[Prepare Dataset](docs/DATASET_GUIDE.md)** - Split and organize images
    ```powershell
-   python scripts/split_dataset.py
-   python scripts/label_images.py
+   .\quickstart_dataset.ps1
+   ```
+   Then label your images: `python scripts/label_images.py`
+
+3. **[Train Model](docs/TRAINING_GUIDE.md)** - Start training with RTX 5080 settings
+   ```powershell
+   .\quickstart_train.ps1
+   ```
+   Or with custom settings:
+   ```powershell
+   .\quickstart_train.ps1 -Epochs 300 -BatchSize 48 -ImageSize 1024
    ```
 
-3. **[Train](docs/TRAINING_GUIDE.md)** - Start training
-   ```powershell
-   python train_optimized.py --data dataset/data.yaml
-   ```
-
-4. **[Commands Reference](docs/QUICK_REFERENCE.md)** - See all commands
+4. **[Commands Reference](docs/QUICK_REFERENCE.md)** - See all available commands
 
 ---
 

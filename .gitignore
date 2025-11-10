@@ -65,7 +65,9 @@ wandb/
 Thumbs.db
 .DS_Store
 
-models/
+models/*
 
-raw_dataset/
-dataset/
+raw_dataset/*
+dataset/images/train/*
+dataset/images/val/*
+dataset/images/test/*

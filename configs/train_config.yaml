@@ -10,29 +10,32 @@ model: yolo11m.pt
 # Image size (pixels)
 # Larger = more accurate but slower training
 # Options: 640 (fast), 832 (balanced), 1024 (accurate)
-image_size: 832
+# Set to 640 for fast training
+image_size: 640
 
 # Batch size (adjust based on your GPU VRAM)
 # RTX 5080 (16GB): 40-48 recommended (optimized for Blackwell architecture)
 # RTX 4090 (24GB): 48-64 recommended
 # RTX 4070 Ti Super (16GB): 32 recommended
 # RTX 4060 Ti (8GB): 16 recommended
-batch_size: 40
+# Increased to 64 for fast training with 640 resolution
+batch_size: 64
 
 # Training epochs
 # More epochs = better training but longer time
-# Recommendation: 500 with early stopping
-epochs: 500
+# Increased to 1000 for maximum accuracy with early stopping at 150
+epochs: 1000
 
 # Data loading workers
 # More workers = faster data loading
 # Set to number of CPU cores (Intel Ultra 7 265K has 20 cores)
 # Recommended: 12-16 workers for high-end systems
-workers: 12
+workers: 16
 
 # Early stopping patience
 # Stop training if no improvement after N epochs
-patience: 100
+# Increased to 150 for more aggressive training before stopping
+patience: 150
 
 # Advanced Settings (Optional)
 # Uncomment and modify if needed
@@ -41,14 +44,14 @@ patience: 100
 # lr0: 0.01              # Initial learning rate
 # lrf: 0.0001            # Final learning rate
 
-# Augmentation settings
-# mosaic: 1.0            # Mosaic augmentation
-# mixup: 0.15            # MixUp augmentation
-# copy_paste: 0.3        # Copy-paste augmentation
-# degrees: 15.0          # Rotation augmentation
-# translate: 0.2         # Translation augmentation
-# scale: 0.9             # Scale augmentation
+# Augmentation settings (enabled for maximum accuracy)
+mosaic: 1.0            # Mosaic augmentation
+mixup: 0.2             # MixUp augmentation (increased from 0.15)
+copy_paste: 0.5        # Copy-paste augmentation (increased from 0.3)
+degrees: 20.0          # Rotation augmentation (increased from 15)
+translate: 0.3         # Translation augmentation (increased from 0.2)
+scale: 0.85            # Scale augmentation (decreased range for stability)
 
 # GPU memory settings
-# fraction: 0.95         # Use 95% of GPU memory
-# amp: true              # Automatic Mixed Precision (FP16)
+fraction: 0.95         # Use 95% of GPU memory
+amp: true              # Automatic Mixed Precision (FP16)
