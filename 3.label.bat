@@ -55,6 +55,10 @@ REM Launch annotation tool
 echo [2/2] Launching annotation tool...
 echo.
 
+REM Set environment variables for Label Studio to handle large file uploads
+set DJANGO_DATA_UPLOAD_MAX_NUMBER_FILES=10000
+set LABEL_STUDIO_DATA_UPLOAD_MAX_NUMBER_FILES=10000
+
 REM Default to Label Studio (web-based, reliable, no desktop GUI issues)
 echo Using Label Studio as the default annotation tool
 echo.
