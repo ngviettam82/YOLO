@@ -49,6 +49,12 @@ YOLO/
 │   └── inference.py        # Run inference
 ├── utils/                   # Helper utilities
 │   └── dataset_utils.py    # Dataset utilities
+├── YoloLabel/               # ⭐ Auto-label with pre-trained YOLO
+│   ├── auto_label.py       # Main auto-labeling script
+│   ├── auto_label.bat      # Quick launcher
+│   ├── compare_labels.py   # Compare original vs corrected
+│   ├── README.md           # Full documentation
+│   └── QUICKSTART.md       # 5-minute quick start
 ├── docs/                   # 📚 Documentation
 │   ├── INSTALLATION.md     # Installation guide
 │   ├── DATASET_GUIDE.md    # Dataset preparation
@@ -61,6 +67,42 @@ YOLO/
 ├── 🚀 4.train.bat               # Step 4: Start training
 └── README.md               # This file
 ```
+
+## 🎯 Quick Start Options
+
+### 🚀 NEW: Auto-Label with Pre-trained YOLO (Fastest)
+
+**Skip manual labeling entirely! Use a pre-trained YOLO model to generate labels automatically.**
+
+```bash
+YoloLabel/auto_label.bat
+```
+
+**What it does:**
+1. Loads pre-trained YOLO11 model
+2. Detects objects in all images automatically
+3. Generates YOLO format labels in `dataset/labels/train/`
+4. Creates visualizations for review
+5. Ready to verify in Label Studio or train immediately
+
+**Workflow:**
+```
+1400+ Images
+     ↓
+Auto-label (5 min) ← YoloLabel/auto_label.bat
+     ↓
+Auto-generated labels (YOLO format)
+     ↓
+Review visualizations (optional)
+     ↓
+Verify in Label Studio (3.label.bat) ← optional
+     ↓
+Train (4.train.bat)
+```
+
+**For detailed guide:** See [YoloLabel README](YoloLabel/README.md) and [Quick Start](YoloLabel/QUICKSTART.md)
+
+---
 
 ## 🚀 Quick Start
 
