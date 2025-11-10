@@ -49,11 +49,15 @@ YOLO/
 │   └── dataset_utils.py    # Dataset utilities
 ├── examples/                # Example scripts
 │   └── dataset_example.py  # Dataset preparation example
+├── docs/                   # 📚 Documentation
+│   ├── INSTALLATION.md     # Installation guide
+│   ├── DATASET_GUIDE.md    # Dataset preparation
+│   ├── TRAINING_GUIDE.md   # Training guide
+│   ├── QUICK_REFERENCE.md  # Quick reference
+│   └── RTX5080_OPTIMIZED.md # GPU optimization
 ├── train_optimized.py      # Main training script
 ├── manage_dataset.bat      # Dataset manager (Windows batch)
 ├── manage_dataset.ps1      # Dataset manager (PowerShell)
-├── DATASET_GUIDE.md        # Dataset preparation guide
-├── TRAINING_GUIDE.md       # Comprehensive training guide
 └── README.md               # This file
 ```
 
@@ -104,7 +108,7 @@ python scripts/label_images.py
 # 5. Roboflow (Cloud AI-assisted)
 ```
 
-📖 [See DATASET_GUIDE.md for detailed instructions](DATASET_GUIDE.md)
+📖 [See docs/DATASET_GUIDE.md for detailed instructions](docs/DATASET_GUIDE.md)
 
 ### 3. Train Model
 
@@ -189,14 +193,11 @@ epochs: 500
 
 ## 📚 Documentation
 
-See [TRAINING_GUIDE.md](TRAINING_GUIDE.md) for comprehensive documentation including:
-
-- Detailed installation instructions
-- Dataset preparation guide
-- Training optimization tips
-- Troubleshooting common issues
-- Performance benchmarks
-- Best practices
+- **[Installation Guide](docs/INSTALLATION.md)** - Setup instructions
+- **[Dataset Guide](docs/DATASET_GUIDE.md)** - Dataset preparation
+- **[Training Guide](docs/TRAINING_GUIDE.md)** - Comprehensive training guide
+- **[Quick Reference](docs/QUICK_REFERENCE.md)** - Command cheat sheet
+- **[RTX 5080 Optimization](docs/RTX5080_OPTIMIZED.md)** - GPU-specific settings
 
 ## 🔑 Key Features
 
@@ -283,4 +284,7 @@ This project uses Ultralytics YOLO which is licensed under AGPL-3.0.
 
 **Happy Training! 🚀**
 
-For detailed instructions, see [TRAINING_GUIDE.md](TRAINING_GUIDE.md)
+Get started:
+1. **Installation**: `docs/INSTALLATION.md`
+2. **Prepare Data**: `docs/DATASET_GUIDE.md`
+3. **Start Training**: `docs/TRAINING_GUIDE.md`
