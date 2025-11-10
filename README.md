@@ -57,6 +57,7 @@ YOLO/
 │   └── RTX5080_OPTIMIZED.md # GPU optimization
 ├── train_optimized.py      # Main training script
 ├── quickstart_dataset.ps1  # Quick dataset preparation
+├── quickstart_label.ps1    # Quick image labeling
 ├── quickstart_train.ps1    # Quick training script
 └── README.md               # This file
 ```
@@ -72,18 +73,22 @@ YOLO/
    ```powershell
    .\quickstart_dataset.ps1
    ```
-   Then label your images: `python scripts/label_images.py`
 
-3. **[Train Model](docs/TRAINING_GUIDE.md)** - Start training with RTX 5080 settings
+3. **[Label Images](docs/DATASET_GUIDE.md)** - Annotate training images
+   ```powershell
+   .\quickstart_label.ps1
+   ```
+   Or with specific tool:
+   ```powershell
+   .\quickstart_label.ps1 -Tool labelimg
+   ```
+
+4. **[Train Model](docs/TRAINING_GUIDE.md)** - Start training with RTX 5080 settings
    ```powershell
    .\quickstart_train.ps1
    ```
-   Or with custom settings:
-   ```powershell
-   .\quickstart_train.ps1 -Epochs 300 -BatchSize 48 -ImageSize 1024
-   ```
 
-4. **[Commands Reference](docs/QUICK_REFERENCE.md)** - See all available commands
+5. **[Commands Reference](docs/QUICK_REFERENCE.md)** - See all available commands
 
 ---
 

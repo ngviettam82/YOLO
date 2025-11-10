@@ -66,7 +66,7 @@ Write-Host "======================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Cyan
 Write-Host "1. Label your training images:" -ForegroundColor White
-Write-Host "   python scripts/label_images.py" -ForegroundColor Gray
+Write-Host "   .\quickstart_label.ps1" -ForegroundColor Gray
 Write-Host ""
 Write-Host "2. Update class names in dataset/data.yaml" -ForegroundColor White
 Write-Host ""

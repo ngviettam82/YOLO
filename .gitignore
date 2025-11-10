@@ -1,12 +1,20 @@
-# Python
+# ===================================================================
+# YOLO Training Template - .gitignore
+# Keep project structure and code, exclude training data and artifacts
+# ===================================================================
+
+# Virtual Environment
+.venv/
+env/
+ENV/
+venv/
+
+# Python cache and compiled files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-.venv/
-env/
-ENV/
 build/
 develop-eggs/
 dist/
@@ -23,24 +31,49 @@ wheels/
 .installed.cfg
 *.egg
 
-# PyTorch
-*.pth
+# ===================================================================
+# Training Data (EXCLUDE - User specific)
+# ===================================================================
+
+# Raw dataset images (user to provide)
+raw_dataset/*
+
+# Split dataset images (auto-generated)
+dataset/images/train/*
+dataset/images/val/*
+dataset/images/test/*
+
+# Dataset labels/annotations (auto-generated)
+dataset/labels/train/*
+dataset/labels/val/*
+dataset/labels/test/*
+
+# Dataset config (user-generated)
+dataset/data.yaml
+
+# ===================================================================
+# Training Artifacts (EXCLUDE - Generate during training)
+# ===================================================================
+
+# Training runs and results
+runs/*
+
+# Pre-trained model weights (large files)
+models/*
+
+# Model files
 *.pt
-!yolo11*.pt  # Keep YOLO pretrained models
+*.pth
 *.onnx
 *.engine
 *.tflite
 *.mlmodel
 *_openvino_model/
 
-# YOLO Training
-runs/
-dataset/train/
-dataset/val/
-dataset/test/
-models/*.pt  # Don't commit large model files
+# ===================================================================
+# IDE and Editor Files
+# ===================================================================
 
-# IDE
 .vscode/
 .idea/
 *.swp
@@ -48,26 +81,37 @@ models/*.pt  # Don't commit large model files
 *~
 .DS_Store
 
-# Jupyter
-.ipynb_checkpoints
+# ===================================================================
+# Jupyter Notebooks
+# ===================================================================
 
-# Logs
+.ipynb_checkpoints/
+*.ipynb
+
+# ===================================================================
+# Logging and Monitoring
+# ===================================================================
+
 *.log
 logs/
 wandb/
+*.csv
 
-# Temporary files
+# ===================================================================
+# Temporary and Cache Files
+# ===================================================================
+
 *.tmp
 *.bak
 *.cache
+*.pkl
+*.pth.tar
 
-# OS
+# ===================================================================
+# OS Specific
+# ===================================================================
+
 Thumbs.db
 .DS_Store
-
-models/*
-
-raw_dataset/*
-dataset/images/train/*
-dataset/images/val/*
-dataset/images/test/*
+.AppleDouble
+.LSOverride

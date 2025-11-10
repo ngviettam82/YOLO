@@ -11,20 +11,21 @@ Fast command lookup and workflow overview.
    .\install.ps1
 
 2. DATASET PREP          → docs/DATASET_GUIDE.md
-   cp images raw_dataset/
-   python scripts/split_dataset.py
-   python scripts/label_images.py
+   .\quickstart_dataset.ps1
 
-3. TRAIN                 → docs/TRAINING_GUIDE.md
-   python scripts/train_optimized.py --data dataset/data.yaml
+3. LABEL IMAGES          → docs/DATASET_GUIDE.md
+   .\quickstart_label.ps1
 
-4. VALIDATE
+4. TRAIN                 → docs/TRAINING_GUIDE.md
+   .\quickstart_train.ps1
+
+5. VALIDATE
    python scripts/validate_model.py --model runs/train_xxx/weights/best.pt --data dataset/data.yaml
 
-5. EXPORT
+6. EXPORT
    python scripts/export_model.py --model runs/train_xxx/weights/best.pt --formats onnx
 
-6. INFERENCE
+7. INFERENCE
    python scripts/inference.py --model runs/train_xxx/weights/best.pt --source image.jpg
 ```
 

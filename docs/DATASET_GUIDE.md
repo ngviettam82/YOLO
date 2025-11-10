@@ -51,7 +51,16 @@ python scripts/split_dataset.py --train 0.8 --val 0.15 --test 0.05
 ### Step 3: Label Images
 
 ```powershell
-python scripts/label_images.py
+.\quickstart_label.ps1
+```
+
+Or with specific tool:
+```powershell
+.\quickstart_label.ps1 -Tool labelimg
+.\quickstart_label.ps1 -Tool cvat
+.\quickstart_label.ps1 -Tool label-studio
+.\quickstart_label.ps1 -Tool openlabeling
+.\quickstart_label.ps1 -Tool roboflow
 ```
 
 Select your preferred annotation tool from the interactive menu.
