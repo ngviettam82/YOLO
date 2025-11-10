@@ -127,7 +127,8 @@ python scripts\train_optimized.py --data dataset/data.yaml --model yolo11m.pt --
 - **[Dataset Guide](docs/DATASET_GUIDE.md)** - Dataset preparation & labeling
 - **[Training Guide](docs/TRAINING_GUIDE.md)** - Training, validation & export
 - **[Quick Reference](docs/QUICK_REFERENCE.md)** - All commands in one place
-- **[Labeling Troubleshooting](docs/LABELING_TROUBLESHOOTING.md)** - Fix LabelImg issues & alternatives
+- **[Label Studio Troubleshooting](LABEL_STUDIO_TROUBLESHOOTING.md)** - Upload issues & solutions
+- **[Labeling Troubleshooting](docs/LABELING_TROUBLESHOOTING.md)** - LabelImg alternatives & tools
 - **[RTX 5080 Optimization](docs/RTX5080_OPTIMIZED.md)** - GPU-specific tips
 
 ## 🤝 Contributing

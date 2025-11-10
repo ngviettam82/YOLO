@@ -1,0 +1,175 @@
+# Label Studio Upload Issues - Troubleshooting Guide
+
+## Error: "You cannot access body after reading from request's data stream"
+
+This is a known issue with Label Studio when uploading large batches of files. Here are several solutions:
+
+---
+
+## ✅ Solution 1: Upload Images in Smaller Batches (Recommended)
+
+Instead of uploading all 273 images at once:
+
+1. **Open Label Studio** at `http://localhost:8080`
+2. **Create a new project**
+3. **Upload in batches of 50-100 images:**
+   - First batch: images 1-50
+   - Wait for processing
+   - Second batch: images 51-100
+   - Continue until all images uploaded
+
+**Why this works:** Avoids overwhelming the server with too many files at once.
+
+---
+
+## ✅ Solution 2: Use Drag-and-Drop Upload
+
+Instead of using the file picker:
+
+1. **Open Label Studio**
+2. **Go to project Data tab**
+3. **Drag and drop images directly** into the upload area
+4. Upload in smaller batches (50-100 at a time)
+
+**Why this works:** Drag-and-drop often bypasses the problematic file picker mechanism.
+
+---
+
+## ✅ Solution 3: Use Alternative Tool - Roboflow
+
+**If Label Studio continues to have issues, use Roboflow instead:**
+
+```batch
+python scripts\label_images.py --tool roboflow
+```
+
+**Advantages:**
+- ✅ Cloud-based (no local Django issues)
+- ✅ AI auto-annotation available
+- ✅ Handles large batches easily
+- ✅ Free tier available
+- ✅ No streaming errors
+
+**Steps:**
+1. Visit https://roboflow.com
+2. Sign up (free tier)
+3. Create new dataset
+4. Upload images (can upload all at once)
+5. Use AI auto-annotation if desired
+6. Download annotations in YOLO format
+7. Place `.txt` files in `dataset/labels/train/`
+
+---
+
+## ✅ Solution 4: Manual Annotation (If UI Tools Fail)
+
+If you need to skip the UI tools entirely, create annotations manually:
+
+### Format:
+Each image needs a corresponding `.txt` file with the same name:
+
+```
+dataset/images/train/
+├── image1.jpg
+├── image2.jpg
+└── ...
+
+dataset/labels/train/
+├── image1.txt          ← Create for each image
+├── image2.txt
+└── ...
+```
+
+### Text File Format:
+Each line represents one object:
+```
+<class_id> <x_center> <y_center> <width> <height>
+```
+
+**Example:** `image1.txt`
+```
+0 0.5 0.4 0.3 0.5
+1 0.2 0.7 0.15 0.2
+```
+
+Where:
+- `class_id`: 0, 1, 2, ... (integer for each class)
+- `x_center`, `y_center`, `width`, `height`: Normalized to 0-1 range
+
+### Calculation:
+```
+x_center = pixel_x_center / image_width
+y_center = pixel_y_center / image_height
+width = box_width / image_width
+height = box_height / image_height
+```
+
+---
+
+## ✅ Solution 5: Reinstall Label Studio Fresh
+
+If errors persist, try a clean reinstall:
+
+```batch
+.venv\Scripts\activate.bat
+pip uninstall label-studio -y
+pip install label-studio
+label-studio
+```
+
+Then try uploading again in smaller batches.
+
+---
+
+## 🔍 Why This Error Occurs
+
+The error "cannot access body after reading from request's data stream" happens because:
+
+1. Django middleware reads the request body to parse files
+2. Multiple middleware components may read the stream
+3. Once read, the stream cannot be accessed again
+4. Large batch uploads trigger this more often
+
+**This is a known Django/Label Studio issue** - not a problem with your setup.
+
+---
+
+## 📊 Recommended Workflow
+
+**Fastest & Most Reliable:**
+
+1. Use **Roboflow** for AI-assisted annotation
+   - Upload all images at once
+   - Let AI auto-annotate
+   - Manual review
+   - Download YOLO format
+
+2. Or upload to **Label Studio in batches**
+   - 50-100 images per batch
+   - Use drag-and-drop
+   - Wait between batches
+
+3. As last resort: **Manual annotation**
+   - For small datasets
+   - When tools are unavailable
+
+---
+
+## 💡 Quick Reference
+
+| Issue | Solution |
+|-------|----------|
+| Upload error | Try batch of 50 images |
+| Still fails | Use Roboflow (cloud-based) |
+| Want local tool | Upgrade Label Studio: `pip install --upgrade label-studio` |
+| Need auto-labeling | Use Roboflow AI (free tier) |
+| All tools fail | Manual annotation format |
+
+---
+
+## 📞 Support
+
+- **Label Studio Docs:** https://labelstud.io/guide/
+- **Roboflow Docs:** https://docs.roboflow.com
+- **YOLO Format:** https://docs.ultralytics.com/datasets/detect/
+
