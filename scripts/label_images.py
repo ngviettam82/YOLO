@@ -106,6 +106,8 @@ class AnnotationLabeling(LabelingTool):
             # Set environment variables for large file uploads
             os.environ['DJANGO_DATA_UPLOAD_MAX_NUMBER_FILES'] = '10000'
             os.environ['LABEL_STUDIO_DATA_UPLOAD_MAX_NUMBER_FILES'] = '10000'
+            os.environ['DJANGO_FILE_UPLOAD_MAX_MEMORY_SIZE'] = '5242880'
+            os.environ['DATA_UPLOAD_MAX_MEMORY_SIZE'] = '5242880'
             
             logger.info("\n🚀 Starting Label Studio server...")
             logger.info("   This will open http://localhost:8080 in your browser")

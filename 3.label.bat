@@ -57,6 +57,8 @@ echo.
 
 REM Set environment variables for Label Studio to handle large file uploads
 set DJANGO_DATA_UPLOAD_MAX_NUMBER_FILES=10000
+set DJANGO_FILE_UPLOAD_MAX_MEMORY_SIZE=5242880
+set DATA_UPLOAD_MAX_MEMORY_SIZE=5242880
 set LABEL_STUDIO_DATA_UPLOAD_MAX_NUMBER_FILES=10000
 
 REM Default to Label Studio (web-based, reliable, no desktop GUI issues)
