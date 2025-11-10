@@ -11,35 +11,35 @@ echo RTX 5080 + CUDA 12.8 Optimized
 echo ========================================
 echo.
 
-REM Check if Python is available
-python --version >nul 2>&1
+REM Check if Python 3.10 is available
+python3.10 --version >nul 2>&1
 if errorlevel 1 (
-    echo ERROR: Python not found!
-    echo Please install Python 3.8-3.11 first.
-    echo Download from: https://www.python.org/downloads/
+    echo ERROR: Python 3.10 not found!
+    echo Please install Python 3.10 first.
+    echo Download from: https://www.python.org/downloads/release/python-3100/
     pause
     exit /b 1
 )
 
-echo Python found:
-python --version
+echo Python 3.10 found:
+python3.10 --version
 echo.
 
 REM Check if virtual environment exists
-if exist "venv\Scripts\activate.bat" (
+if exist ".venv\Scripts\activate.bat" (
     echo Virtual environment already exists.
     echo.
     choice /C YN /M "Do you want to recreate it? (This will delete the existing one)"
     if errorlevel 2 goto skip_venv
     if errorlevel 1 (
         echo Removing old virtual environment...
-        rmdir /s /q venv
+        rmdir /s /q .venv
     )
 )
 
-REM Create virtual environment
-echo Creating virtual environment...
-python -m venv venv
+REM Create virtual environment with Python 3.10
+echo Creating virtual environment with Python 3.10...
+python3.10 -m venv .venv
 if errorlevel 1 (
     echo ERROR: Failed to create virtual environment!
     pause
@@ -51,7 +51,7 @@ echo.
 :skip_venv
 REM Activate virtual environment
 echo Activating virtual environment...
-call venv\Scripts\activate.bat
+call .venv\Scripts\activate.bat
 echo.
 
 REM Upgrade pip
@@ -119,6 +119,6 @@ echo - RTX5080_OPTIMIZED.md
 echo - TRAINING_GUIDE.md
 echo.
 echo Virtual environment is active. To deactivate, type: deactivate
-echo To reactivate later, run: venv\Scripts\activate.bat
+echo To reactivate later, run: .venv\Scripts\activate.bat
 echo.
 pause
