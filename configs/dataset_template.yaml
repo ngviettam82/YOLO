@@ -1,0 +1,47 @@
+# YOLOv11 Dataset Configuration Template
+# 
+# Directory structure should be:
+# dataset/
+#   ├── train/
+#   │   ├── images/
+#   │   │   ├── image1.jpg
+#   │   │   ├── image2.jpg
+#   │   │   └── ...
+#   │   └── labels/
+#   │       ├── image1.txt
+#   │       ├── image2.txt
+#   │       └── ...
+#   ├── val/
+#   │   ├── images/
+#   │   └── labels/
+#   └── test/ (optional)
+#       ├── images/
+#       └── labels/
+
+# Path to training images and labels
+train: ../dataset/train/images
+
+# Path to validation images and labels
+val: ../dataset/val/images
+
+# Path to test images and labels (optional)
+test: ../dataset/test/images
+
+# Number of classes
+nc: 3
+
+# Class names (customize for your specific task)
+names:
+  0: class1
+  1: class2
+  2: class3
+  # Add more classes as needed:
+  # 3: class4
+  # 4: class5
+
+# Additional information (optional)
+# download: https://your-dataset-url.com  # Dataset download URL
+# roboflow:
+#   workspace: your-workspace
+#   project: your-project
+#   version: 1

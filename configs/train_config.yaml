@@ -1,0 +1,54 @@
+# YOLO11 Training Configuration
+# Optimized for Maximum Performance and Accuracy
+
+# Model Selection
+# Options: yolo11n.pt (nano), yolo11s.pt (small), yolo11m.pt (medium), 
+#          yolo11l.pt (large), yolo11x.pt (xlarge)
+# Recommendation: yolo11m.pt for best balance of speed and accuracy
+model: yolo11m.pt
+
+# Image size (pixels)
+# Larger = more accurate but slower training
+# Options: 640 (fast), 832 (balanced), 1024 (accurate)
+image_size: 832
+
+# Batch size (adjust based on your GPU VRAM)
+# RTX 5080 (16GB): 40-48 recommended (optimized for Blackwell architecture)
+# RTX 4090 (24GB): 48-64 recommended
+# RTX 4070 Ti Super (16GB): 32 recommended
+# RTX 4060 Ti (8GB): 16 recommended
+batch_size: 40
+
+# Training epochs
+# More epochs = better training but longer time
+# Recommendation: 500 with early stopping
+epochs: 500
+
+# Data loading workers
+# More workers = faster data loading
+# Set to number of CPU cores (Intel Ultra 7 265K has 20 cores)
+# Recommended: 12-16 workers for high-end systems
+workers: 12
+
+# Early stopping patience
+# Stop training if no improvement after N epochs
+patience: 100
+
+# Advanced Settings (Optional)
+# Uncomment and modify if needed
+
+# Learning rate settings
+# lr0: 0.01              # Initial learning rate
+# lrf: 0.0001            # Final learning rate
+
+# Augmentation settings
+# mosaic: 1.0            # Mosaic augmentation
+# mixup: 0.15            # MixUp augmentation
+# copy_paste: 0.3        # Copy-paste augmentation
+# degrees: 15.0          # Rotation augmentation
+# translate: 0.2         # Translation augmentation
+# scale: 0.9             # Scale augmentation
+
+# GPU memory settings
+# fraction: 0.95         # Use 95% of GPU memory
+# amp: true              # Automatic Mixed Precision (FP16)
