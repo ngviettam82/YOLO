@@ -1,157 +1,86 @@
 ````markdown
-# Dataset Management Guide
+# Dataset Preparation Guide
 
-This guide will help you prepare your dataset for YOLO training with automated splitting and labeling.
+Complete guide for preparing your dataset for YOLO training.
 
-## Directory Structure
+---
+
+## 📂 Directory Structure
 
 ```
-YOLO/
-├── raw_dataset/           # 📁 Place your raw images here
-│   ├── image1.jpg
-│   ├── image2.png
-│   └── ...
-│
-├── dataset/               # 📁 Organized dataset (auto-generated)
-│   ├── images/
-│   │   ├── train/        # Training images (70%)
-│   │   ├── val/          # Validation images (20%)
-│   │   └── test/         # Test images (10%)
-│   ├── labels/
-│   │   ├── train/        # Training annotations
-│   │   ├── val/          # Validation annotations
-│   │   └── test/         # Test annotations
-│   └── data.yaml         # Dataset configuration
-│
-├── scripts/
-│   ├── split_dataset.py   # Split raw images into train/val/test
-│   └── label_images.py    # Launch annotation tools
+raw_dataset/              ← Your raw images go here
+├── image1.jpg
+├── image2.png
+└── ...
+
+dataset/                  ← Auto-organized dataset (created by split_dataset.py)
+├── images/
+│   ├── train/  (70%)
+│   ├── val/    (20%)
+│   └── test/   (10%)
+├── labels/
+│   ├── train/  (your annotations)
+│   ├── val/
+│   └── test/
+└── data.yaml  (config file)
 ```
 
-## Quick Start (3 Steps)
+---
 
-### Step 1: Prepare Raw Images
+## 🚀 Quick Start (3 Steps)
 
-1. Collect all your images
-2. Copy them to the `raw_dataset/` folder
-3. Supported formats: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`, `.webp`
+### Step 1: Add Images to raw_dataset/
 
-```bash
-# Example: Copy your images
-cp your_images/* raw_dataset/
-```
+1. Collect your images
+2. Place them in `raw_dataset/` folder
+3. Supported formats: JPG, PNG, BMP, GIF, WebP
 
 ### Step 2: Split Dataset
 
-Split your images into train/val/test sets with optimized ratios (70/20/10):
-
-```bash
-# Activate virtual environment
-.\.venv\Scripts\Activate.ps1
-
-# Split dataset
+```powershell
 python scripts/split_dataset.py
 ```
 
-**Output:**
-- ✅ Train: ~70% of images → `dataset/images/train/`
-- ✅ Val:   ~20% of images → `dataset/images/val/`
-- ✅ Test:  ~10% of images → `dataset/images/test/`
+**Default:** 70% train, 20% val, 10% test
+
+**Custom split:**
+```powershell
+python scripts/split_dataset.py --train 0.8 --val 0.15 --test 0.05
+```
 
 ### Step 3: Label Images
 
-Label the training images using your preferred tool:
-
-```bash
+```powershell
 python scripts/label_images.py
 ```
 
-Then select from 5 annotation tools (or create config directly).
+Select your preferred annotation tool from the interactive menu.
 
 ---
 
-## Detailed Usage
+## 🏷️ Annotation Tools
 
-### Split Dataset with Custom Ratios
+| Tool | Type | Setup | Speed | Best For |
+|------|------|-------|-------|----------|
+| **LabelImg** | Desktop | 1 min | Fast | Beginners |
+| **CVAT** | Web | 10 min | Medium | Teams |
+| **Label Studio** | Web | 2 min | Medium | Web users |
+| **OpenLabeling** | Desktop | 3 min | Fast | Speed |
+| **Roboflow** | Cloud | 0 min | Slow | AI-assisted |
 
-```bash
-# Default: 70% train, 20% val, 10% test
-python scripts/split_dataset.py
-
-# Custom split: 80% train, 15% val, 5% test
-python scripts/split_dataset.py --train 0.8 --val 0.15 --test 0.05
-
-# Move files instead of copying (saves disk space)
-python scripts/split_dataset.py --move
-```
+**Recommended:** LabelImg (offline, fast, easy to use)
 
 ---
 
-## Annotation Tools
+## 📝 YOLO Label Format
 
-### 1. **LabelImg** (Recommended for beginners) 🌟
-
-Fast, offline desktop tool for bounding box annotation.
-
-```bash
-pip install labelimg
-python scripts/label_images.py --tool labelimg
-```
-
-### 2. **CVAT** (Best for teams) 👥
-
-Professional web-based annotation platform.
-
-```bash
-python scripts/label_images.py --tool cvat
-```
-
-### 3. **Label Studio** (Easy web-based) 🌐
-
-Simple web interface, minimal setup required.
-
-```bash
-pip install label-studio
-python scripts/label_images.py --tool label-studio
-```
-
-### 4. **OpenLabeling** (Fastest annotation) ⚡
-
-Lightweight desktop tool optimized for speed.
-
-```bash
-python scripts/label_images.py --tool openlabeling
-```
-
-### 5. **Roboflow** (Cloud AI-assisted) 🤖
-
-AI-powered annotation with minimal manual work.
-
-```bash
-python scripts/label_images.py --tool roboflow
-```
-
----
-
-## After Annotation
-
-### Create Dataset Configuration
-
-```bash
-python scripts/label_images.py --config --num-classes 3
-```
-
-This creates `dataset/data.yaml` with your class names.
-
----
-
-## YOLO Label Format
-
-Each image needs a corresponding `.txt` file:
+Each image needs a `.txt` file with the same name:
 
 ```
 <class_id> <x_center> <y_center> <width> <height>
 ```
+
+All values are normalized (0-1).
 
 **Example:** `image1.txt`
 ```
@@ -161,37 +90,64 @@ Each image needs a corresponding `.txt` file:
 
 ---
 
-## Start Training
+## ⚙️ Dataset Configuration
 
-Once your dataset is ready:
+After labeling, create your dataset config:
 
-```bash
-python train_optimized.py --data dataset/data.yaml --epochs 100 --batch 24
+```powershell
+python scripts/label_images.py --config --num-classes 3
 ```
+
+This creates `dataset/data.yaml`:
+```yaml
+path: dataset
+train: images/train
+val: images/val
+test: images/test
+
+nc: 3
+names: ['class0', 'class1', 'class2']
+```
+
+**Update class names in `dataset/data.yaml`** to match your objects.
 
 ---
 
-## Dataset Best Practices
+## ✅ Best Practices
 
 ✅ **Do:**
-- Use high-quality images
-- Include diverse lighting conditions
-- Capture objects from multiple angles
-- Aim for 100+ images per class minimum
-- Balance classes (similar number of each class)
+- High-quality images (at least 640x640)
+- Diverse angles and lighting
+- 100+ images per class minimum
+- Balanced classes (similar count per class)
+- Consistent annotation style
 
 ❌ **Don't:**
-- Use very low-resolution images
-- Have huge class imbalance
-- Annotate inconsistently
+- Low resolution images
+- Extreme class imbalance
+- Inconsistent annotations
+- Mislabeled images
 - Skip difficult examples
 
 ---
 
-**Ready to train your model?** 🚀
+## 📊 Dataset Statistics
 
-```bash
-python train_optimized.py --data dataset/data.yaml
+Check your dataset:
+```powershell
+python scripts/split_dataset.py --stats
 ```
+
+---
+
+## 🎯 Next Steps
+
+Once dataset is ready:
+
+```powershell
+python train_optimized.py --data dataset/data.yaml --epochs 100
+```
+
+See `docs/TRAINING_GUIDE.md` for training instructions.
 
 ````

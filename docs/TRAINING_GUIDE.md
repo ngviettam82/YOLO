@@ -1,124 +1,60 @@
 ````markdown
-# YOLO11 Training Setup Guide
+# Training Guide
 
-This guide will help you set up and train YOLO11 models with maximum performance and accuracy.
-
----
-
-## 📋 Table of Contents
-
-1. [Prerequisites](#prerequisites)
-2. [Installation](#installation)
-3. [Dataset Preparation](#dataset-preparation)
-4. [Training](#training)
-5. [Validation & Export](#validation--export)
-6. [Inference](#inference)
-7. [Optimization Tips](#optimization-tips)
+Complete YOLO11 training instructions optimized for RTX 5080.
 
 ---
 
-## 🔧 Prerequisites
+## Prerequisites
 
-### Hardware Requirements
-
-**Minimum:**
-- CPU: 4 cores
-- RAM: 8GB
-- Storage: 50GB free space
-
-**Recommended:**
-- GPU: NVIDIA RTX 3060 or better (12GB+ VRAM)
-- CPU: 8+ cores
-- RAM: 16GB+
-- Storage: 100GB+ SSD
-
-**Optimal (Your Setup):**
-- GPU: NVIDIA RTX 5080 (16GB VRAM)
-- CPU: Intel Ultra 7 265K or equivalent (12+ cores)
-- RAM: 64GB+
-- Storage: 1TB+ NVMe SSD
-
-### Software Requirements
-
-- **Python**: 3.10
-- **CUDA**: 12.8
-- **Operating System**: Windows 10/11, Linux, or macOS
+Before training, ensure:
+1. Installation complete (`docs/INSTALLATION.md`)
+2. Dataset prepared (`docs/DATASET_GUIDE.md`)
+3. `dataset/data.yaml` configured with your classes
+4. `dataset/labels/train/` populated with annotations
 
 ---
 
-## 📦 Installation
+## 🚀 Training Commands
 
-See `docs/INSTALLATION.md` for detailed setup instructions.
-
-Quick installation:
+### Basic Training
 
 ```powershell
-.\install.ps1
-```
-
----
-
-## 📁 Dataset Preparation
-
-See `docs/DATASET_GUIDE.md` for detailed dataset instructions.
-
-Quick workflow:
-
-```bash
-# 1. Add images to raw_dataset/
-# 2. Split dataset
-python scripts/split_dataset.py
-
-# 3. Label images
-python scripts/label_images.py
-
-# 4. Create config
-python scripts/label_images.py --config --num-classes 3
-
-# 5. Update class names in dataset/data.yaml
-```
-
----
-
-## 🚀 Training
-
-### Quick Start Training
-
-```powershell
-# Basic training
 python train_optimized.py --data dataset/data.yaml
+```
 
-# With custom epochs
-python train_optimized.py --data dataset/data.yaml --epochs 100 --batch 32
+### With Custom Settings
 
-# Start fresh (no resume)
+```powershell
+# 100 epochs, batch 40, image size 832
+python train_optimized.py --data dataset/data.yaml --epochs 100 --batch 40 --imgsz 832
+
+# No resume (fresh start)
 python train_optimized.py --data dataset/data.yaml --no-resume
+
+# Specific model (yolo11s, yolo11m, yolo11l, yolo11x)
+python train_optimized.py --data dataset/data.yaml --model yolo11l.pt
 ```
 
-### Training Configuration
+---
 
-Edit `configs/train_config.yaml` to customize training:
+## 🎯 Model Selection
 
-```yaml
-model: yolo11m.pt      # Model size (n/s/m/l/x)
-image_size: 832        # Image size for training
-batch_size: 32         # Batch size (adjust for your GPU)
-epochs: 500            # Number of epochs
-workers: 8             # Data loading workers
-patience: 100          # Early stopping patience
-```
+| Model | Speed | Accuracy | VRAM | Best For |
+|-------|-------|----------|------|----------|
+| yolo11n | ⚡⚡⚡⚡⚡ | ⭐⭐ | 4GB | Edge devices |
+| yolo11s | ⚡⚡⚡⚡ | ⭐⭐⭐ | 6GB | Fast inference |
+| **yolo11m** | ⚡⚡⚡ | ⭐⭐⭐⭐ | 8GB+ | **Balanced (Recommended)** |
+| yolo11l | ⚡⚡ | ⭐⭐⭐⭐⭐ | 12GB+ | High accuracy |
+| yolo11x | ⚡ | ⭐⭐⭐⭐⭐ | 16GB+ | Maximum accuracy |
 
-### Model Selection Guide
+**For RTX 5080:** Start with `yolo11m.pt`, upgrade to `yolo11l.pt` or `yolo11x.pt` for higher accuracy.
 
-| Model | Size | Speed | Accuracy | VRAM | Best For |
-|-------|------|-------|----------|------|----------|
-| yolo11n.pt | Nano | ⚡⚡⚡⚡⚡ | ⭐⭐ | 4GB | Real-time, Edge devices |
-| yolo11s.pt | Small | ⚡⚡⚡⚡ | ⭐⭐⭐ | 6GB | Fast inference |
-| yolo11m.pt | Medium | ⚡⚡⚡ | ⭐⭐⭐⭐ | 8GB+ | **Balanced (Recommended)** |
-| yolo11l.pt | Large | ⚡⚡ | ⭐⭐⭐⭐⭐ | 12GB+ | High accuracy |
-| yolo11x.pt | XLarge | ⚡ | ⭐⭐⭐⭐⭐ | 16GB+ | Maximum accuracy |
+---
 
-### Batch Size Recommendations for RTX 5080 (16GB)
+## 📊 Batch Size Recommendations for RTX 5080 (16GB)
+
+Adjust batch size based on image size and model:
 
 | Image Size | yolo11n | yolo11s | yolo11m | yolo11l | yolo11x |
 |-----------|---------|---------|---------|---------|---------|
@@ -126,40 +62,66 @@ patience: 100          # Early stopping patience
 | 832 | 64 | 48 | 40 | 24 | 16 |
 | 1024 | 48 | 32 | 24 | 16 | 12 |
 
-### Training Output
+**RTX 5080 sweet spot:** Image size 832, batch 40-48, yolo11m-l
 
-Training results will be saved to:
-```
-YOLO/runs/train_YYYYMMDD_HHMMSS/
-├── weights/
-│   ├── best.pt        # Best model weights
-│   └── last.pt        # Last epoch weights
-├── results.png        # Training curves
-├── confusion_matrix.png
-└── ...
+---
+
+## ⚙️ Configuration File
+
+Edit `configs/train_config.yaml` to customize defaults:
+
+```yaml
+model: yolo11m.pt      # Model to use
+image_size: 832        # Input image size
+batch_size: 40         # Batch size
+epochs: 500            # Total epochs
+patience: 100          # Early stopping patience
+workers: 8             # Data loading workers
 ```
 
 ---
 
-## ✅ Validation & Export
+## 📈 Training Output
 
-### Validate Trained Model
+Training results saved to: `runs/train_YYYYMMDD_HHMMSS/`
 
-```powershell
-# Validate with default settings
-python scripts/validate_model.py --model runs/train_xxx/weights/best.pt --data dataset/data.yaml
-
-# Custom validation
-python scripts/validate_model.py --model runs/train_xxx/weights/best.pt --data dataset/data.yaml --imgsz 832 --batch 16
+```
+runs/train_xxx/
+├── weights/
+│   ├── best.pt        # Best model (highest mAP)
+│   └── last.pt        # Last checkpoint
+├── results.png        # Training curves
+├── confusion_matrix.png
+└── results.csv
 ```
 
-### Export Model
+Monitor training in real-time with TensorBoard:
+```powershell
+tensorboard --logdir runs/detect
+```
+
+---
+
+## ✅ Validation
+
+Validate trained model:
 
 ```powershell
-# Export to ONNX (recommended)
-python scripts/export_model.py --model runs/train_xxx/weights/best.pt --formats onnx
+python scripts/validate_model.py --model runs/train_xxx/weights/best.pt --data dataset/data.yaml
+```
 
-# Export to multiple formats
+---
+
+## 📤 Export Model
+
+Export to ONNX (recommended for deployment):
+
+```powershell
+python scripts/export_model.py --model runs/train_xxx/weights/best.pt --formats onnx
+```
+
+Export to multiple formats:
+```powershell
 python scripts/export_model.py --model runs/train_xxx/weights/best.pt --formats onnx torchscript engine
 ```
 
@@ -167,17 +129,17 @@ python scripts/export_model.py --model runs/train_xxx/weights/best.pt --formats 
 
 ## 🎯 Inference
 
-### Run Inference
+Run predictions:
 
 ```powershell
 # Single image
-python scripts/inference.py --model runs/train_xxx/weights/best.pt --source path/to/image.jpg
+python scripts/inference.py --model runs/train_xxx/weights/best.pt --source image.jpg
 
 # Folder of images
 python scripts/inference.py --model runs/train_xxx/weights/best.pt --source path/to/images/
 
-# Video file
-python scripts/inference.py --model runs/train_xxx/weights/best.pt --source path/to/video.mp4
+# Video
+python scripts/inference.py --model runs/train_xxx/weights/best.pt --source video.mp4
 
 # Webcam
 python scripts/inference.py --model runs/train_xxx/weights/best.pt --source 0 --show
@@ -185,39 +147,43 @@ python scripts/inference.py --model runs/train_xxx/weights/best.pt --source 0 --
 
 ---
 
-## 🔥 Optimization Tips
+## 🔥 Training Strategies
 
-### 1. Maximum Accuracy
+### For Maximum Accuracy
 
 ```yaml
-model: yolo11l.pt          # Use larger model
-image_size: 1024           # Higher resolution
-batch_size: 16             # As large as GPU allows
-epochs: 800                # More training
-patience: 150              # More patience
+model: yolo11x.pt      # Largest model
+image_size: 1024       # High resolution
+batch_size: 12         # Large effective batch
+epochs: 800            # More training
+patience: 200          # Late stopping
 ```
 
-### 2. Maximum Speed
+### For Speed
 
 ```yaml
-model: yolo11n.pt          # Smaller model
-image_size: 640            # Lower resolution
-batch_size: 32             # Large batch for GPU utilization
+model: yolo11n.pt      # Smallest model
+image_size: 640        # Lower resolution
+batch_size: 64         # Optimize GPU
+epochs: 300            # Quick training
 ```
 
-### 3. Limited GPU Memory
+### For Small Datasets (<500 images)
 
 ```yaml
-batch_size: 8              # Smaller batch
-image_size: 640            # Smaller images
-workers: 4                 # Fewer workers
+model: yolo11s.pt      # Smaller model
+image_size: 640        # Lower resolution
+batch_size: 16         # Conservative
+epochs: 300            # Prevent overfitting
+patience: 50           # Early stop
 ```
 
-### 4. Small Dataset (< 500 images)
+### For Limited GPU Memory
 
 ```yaml
-epochs: 300                # Fewer epochs to avoid overfitting
-patience: 50               # Earlier stopping
+batch_size: 8          # Small batch
+image_size: 640        # Small images
+workers: 4             # Fewer workers
 ```
 
 ---
@@ -232,7 +198,7 @@ patience: 50               # Earlier stopping
 | 832 | 0.8h | 1.2h | 1.8h | 3h | 4h |
 | 1024 | 1.2h | 1.8h | 2.5h | 4h | 5h |
 
-### Inference Speed (FPS, RTX 5080, batch 1)
+### Inference Speed (FPS at batch 1, RTX 5080)
 
 | Model | 640 | 832 | 1024 |
 |-------|-----|-----|------|
@@ -244,9 +210,9 @@ patience: 50               # Earlier stopping
 
 ---
 
-## 🐛 Troubleshooting
+## 🆘 Troubleshooting
 
-### Issue: CUDA Out of Memory
+### CUDA Out of Memory
 
 ```powershell
 # Reduce batch size
@@ -256,42 +222,45 @@ python train_optimized.py --data dataset/data.yaml --batch 8
 python train_optimized.py --data dataset/data.yaml --imgsz 640
 ```
 
-### Issue: Training Too Slow
+### Training Too Slow
 
 ```powershell
-# Increase batch size (if GPU allows)
+# Increase batch size
 python train_optimized.py --data dataset/data.yaml --batch 64
 
 # Enable caching
 python train_optimized.py --data dataset/data.yaml --cache ram
 ```
 
-### Issue: Low Accuracy
+### Low Accuracy
 
-- Train longer: increase `--epochs`
-- Use larger model: `yolo11l.pt` instead of `yolo11m.pt`
-- Increase image size: `--imgsz 1024`
-- Collect more training data
-- Improve label quality
-- Check for class imbalance
+1. Train longer (increase epochs)
+2. Use larger model (yolo11l vs yolo11m)
+3. Increase image size to 1024
+4. Collect more training data
+5. Improve annotation quality
+6. Check for class imbalance
 
-### Issue: Overfitting
+### Overfitting (train loss low, val loss high)
 
-- Collect more training data
-- Increase augmentation
-- Use early stopping with patience
-- Reduce model size
-- Reduce training epochs
+1. Collect more data
+2. Use data augmentation
+3. Reduce model size
+4. Train fewer epochs
+5. Enable early stopping
 
 ---
 
-## 📚 Quick Reference Commands
+## 📚 Quick Commands
 
 ```powershell
-# Training
+# Train
 python train_optimized.py --data dataset/data.yaml
 
-# Validation
+# Resume training
+python train_optimized.py --data dataset/data.yaml --resume
+
+# Validate
 python scripts/validate_model.py --model runs/train_xxx/weights/best.pt --data dataset/data.yaml
 
 # Inference
@@ -299,10 +268,6 @@ python scripts/inference.py --model runs/train_xxx/weights/best.pt --source test
 
 # Export
 python scripts/export_model.py --model runs/train_xxx/weights/best.pt --formats onnx
-
-# Dataset
-python scripts/split_dataset.py
-python scripts/label_images.py
 ```
 
 ---
@@ -317,6 +282,6 @@ python scripts/label_images.py
 
 ---
 
-**Good luck with your YOLO training! 🚀**
+**Good luck training! 🚀**
 
 ````
