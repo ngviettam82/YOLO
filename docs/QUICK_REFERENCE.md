@@ -1,146 +1,377 @@
 # Quick Reference
 
-Fast command lookup and workflow overview.
+All commands at a glance for YOLO training.
 
 ---
 
-## 📊 One-Page Workflow
+## 🚀 One-Click Quick Start (Easiest)
 
-```
-1. INSTALL               → docs/INSTALLATION.md
-   .\install.ps1
+Simply double-click these files in the project root **in order**:
 
-2. DATASET PREP          → docs/DATASET_GUIDE.md
-   .\quickstart_dataset.ps1
+| Step | File | What It Does |
+|------|------|-------------|
+| 1 | `1.install.bat` | 🔧 Setup Python environment & install PyTorch |
+| 2 | `2.dataset.bat` | 📦 Split images into train/val/test |
+| 3 | `3.label.bat` | 🎯 Open LabelImg to annotate images |
+| 4 | `4.train.bat` | 🚂 Start training with optimized settings |
 
-3. LABEL IMAGES          → docs/DATASET_GUIDE.md
-   .\quickstart_label.ps1
-
-4. TRAIN                 → docs/TRAINING_GUIDE.md
-   .\quickstart_train.ps1
-
-5. VALIDATE
-   python scripts/validate_model.py --model runs/train_xxx/weights/best.pt --data dataset/data.yaml
-
-6. EXPORT
-   python scripts/export_model.py --model runs/train_xxx/weights/best.pt --formats onnx
-
-7. INFERENCE
-   python scripts/inference.py --model runs/train_xxx/weights/best.pt --source image.jpg
-```
+**Total time:** ~15 minutes setup + 2-8 hours training
 
 ---
 
-## 🚀 Essential Commands
+## ⚙️ Setup & Installation
 
-### Dataset Management
-```powershell
-# Split images into train/val/test
-python scripts/split_dataset.py
-
-# Custom split (80% train, 15% val, 5% test)
-python scripts/split_dataset.py --train 0.8 --val 0.15 --test 0.05
-
-# Launch annotation tools
-python scripts/label_images.py
-
-# Create dataset config (3 classes)
-python scripts/label_images.py --config --num-classes 3
+### Quick Setup (Double-Click)
+```batch
+1.install.bat
 ```
 
-### Training
-```powershell
-# Basic training
-python scripts/train_optimized.py --data dataset/data.yaml
-
-# Custom settings
-python scripts/train_optimized.py --data dataset/data.yaml --epochs 100 --batch 40 --imgsz 832
-
-# Specific model
-python scripts/train_optimized.py --data dataset/data.yaml --model yolo11l.pt
-
-# Resume training
-python scripts/train_optimized.py --data dataset/data.yaml --resume
-
-# Fresh start (no resume)
-python scripts/train_optimized.py --data dataset/data.yaml --no-resume
+### Manual Setup
+```batch
+python3.10 -m venv .venv
+.venv\Scripts\activate.bat
+pip install -r requirements.txt
+python scripts\check_setup.py
 ```
 
-### Validation & Export
-```powershell
-# Validate model
-python scripts/validate_model.py --model runs/train_xxx/weights/best.pt --data dataset/data.yaml
-
-# Export to ONNX
-python scripts/export_model.py --model runs/train_xxx/weights/best.pt --formats onnx
-
-# Export to multiple formats
-python scripts/export_model.py --model runs/train_xxx/weights/best.pt --formats onnx torchscript engine
-```
-
-### Inference
-```powershell
-# Single image
-python scripts/inference.py --model runs/train_xxx/weights/best.pt --source image.jpg
-
-# Folder of images
-python scripts/inference.py --model runs/train_xxx/weights/best.pt --source folder/
-
-# Video
-python scripts/inference.py --model runs/train_xxx/weights/best.pt --source video.mp4
-
-# Webcam
-python scripts/inference.py --model runs/train_xxx/weights/best.pt --source 0 --show
-```
-
-### Utilities
-```powershell
-# Check setup
-python scripts/check_setup.py
-
-# Monitor training with TensorBoard
-tensorboard --logdir runs/detect
+### Verify Installation
+```batch
+python scripts\check_setup.py
 ```
 
 ---
 
-## 📁 File Locations
+## 📦 Dataset Preparation
 
-| Purpose | Location |
-|---------|----------|
-| Raw images | `raw_dataset/` |
-| Split images | `dataset/images/{train,val,test}/` |
-| Annotations | `dataset/labels/{train,val,test}/` |
-| Config | `dataset/data.yaml` |
-| Training config | `configs/train_config.yaml` |
-| Results | `runs/train_YYYYMMDD_HHMMSS/` |
-| Best model | `runs/train_xxx/weights/best.pt` |
+### Quick Dataset Prep (Double-Click)
+```batch
+2.dataset.bat
+```
 
----
+### Manual Dataset Split
+```batch
+.venv\Scripts\activate.bat
+python scripts\split_dataset.py --train 0.7 --val 0.2 --test 0.1
+```
 
-## 🎯 RTX 5080 Recommendations
-
-**Best Settings:**
-- Model: `yolo11m.pt` (or `yolo11l.pt` for higher accuracy)
-- Image size: `832` (or `1024` for high accuracy)
-- Batch size: `40-48` (or `24-32` for conservative)
-- Epochs: `100-300` (or `500+` for small datasets)
-
-**Quick Best-Balanced Command:**
-```powershell
-python scripts/train_optimized.py --data dataset/data.yaml --epochs 200 --batch 40 --imgsz 832
+### Custom Split Ratios
+```batch
+python scripts\split_dataset.py --train 0.8 --val 0.15 --test 0.05
 ```
 
 ---
 
-## 📖 Full Documentation
+## 🎯 Image Annotation
 
-- **Installation**: `docs/INSTALLATION.md`
-- **Dataset**: `docs/DATASET_GUIDE.md`
-- **Training**: `docs/TRAINING_GUIDE.md`
-- **GPU Tips**: `docs/RTX5080_OPTIMIZED.md`
-- **Main**: `README.md`
+### Quick Labeling (Double-Click)
+```batch
+3.label.bat
+```
+
+### Manual Labeling with LabelImg
+```batch
+.venv\Scripts\activate.bat
+python scripts\label_images.py --tool labelimg
+```
+
+### Alternative Annotation Tools
+```batch
+python scripts\label_images.py --tool label-studio
+python scripts\label_images.py --tool cvat
+python scripts\label_images.py --tool openlabeling
+```
+
+### Create Dataset Config
+```batch
+python scripts\label_images.py --config --num-classes 3
+```
 
 ---
 
-**Need more details? See the full guides above! 📚**
+## 🚂 Model Training
+
+### Quick Training (Double-Click)
+```batch
+4.train.bat
+```
+
+### Manual Training with Default Settings
+```batch
+.venv\Scripts\activate.bat
+python scripts\train_optimized.py --data dataset/data.yaml --model yolo11m.pt --epochs 1000 --batch 64 --imgsz 640
+```
+
+### Custom Training Parameters
+```batch
+python scripts\train_optimized.py ^
+  --data dataset/data.yaml ^
+  --model yolo11m.pt ^
+  --epochs 500 ^
+  --batch 64 ^
+  --imgsz 640 ^
+  --patience 150 ^
+  --device 0
+```
+
+### Resume Training
+```batch
+python scripts\train_optimized.py --data dataset/data.yaml --resume
+```
+
+### Training with Different Model Sizes
+```batch
+python scripts\train_optimized.py --model yolo11n.pt  # Nano (fastest)
+python scripts\train_optimized.py --model yolo11s.pt  # Small
+python scripts\train_optimized.py --model yolo11m.pt  # Medium (default)
+python scripts\train_optimized.py --model yolo11l.pt  # Large
+python scripts\train_optimized.py --model yolo11x.pt  # Extra Large (most accurate)
+```
+
+### Training with Different Image Sizes
+```batch
+python scripts\train_optimized.py --imgsz 416   # Small (fast)
+python scripts\train_optimized.py --imgsz 512   # Medium
+python scripts\train_optimized.py --imgsz 640   # Default (balanced)
+python scripts\train_optimized.py --imgsz 768   # Large
+python scripts\train_optimized.py --imgsz 1024  # Extra Large (slow, needs 24GB+ VRAM)
+```
+
+---
+
+## ✅ Model Validation & Testing
+
+### Validate Model
+```batch
+.venv\Scripts\activate.bat
+python scripts\validate_model.py --model runs/train_001/weights/best.pt --data dataset/data.yaml
+```
+
+### Run Inference on Single Image
+```batch
+python scripts\inference.py --model runs/train_001/weights/best.pt --source test.jpg
+```
+
+### Run Inference on Multiple Images
+```batch
+python scripts\inference.py --model runs/train_001/weights/best.pt --source dataset/images/test/
+```
+
+### Run Inference on Video
+```batch
+python scripts\inference.py --model runs/train_001/weights/best.pt --source video.mp4
+```
+
+### Adjust Confidence Threshold
+```batch
+python scripts\inference.py --model runs/train_001/weights/best.pt --source test.jpg --conf 0.7
+```
+
+---
+
+## 📦 Model Export
+
+### Export to ONNX
+```batch
+.venv\Scripts\activate.bat
+python scripts\export_model.py --model runs/train_001/weights/best.pt --formats onnx
+```
+
+### Export to TensorRT
+```batch
+python scripts\export_model.py --model runs/train_001/weights/best.pt --formats engine
+```
+
+### Export Multiple Formats
+```batch
+python scripts\export_model.py --model runs/train_001/weights/best.pt --formats onnx engine pb
+```
+
+### Supported Export Formats
+```
+pt            # PyTorch native
+onnx          # Open Neural Network Exchange
+engine        # TensorRT (NVIDIA optimized)
+pb            # TensorFlow SavedModel
+tflite        # TensorFlow Lite (mobile)
+torchscript   # TorchScript (C++ compatible)
+```
+
+---
+
+## 🛠️ Environment Management
+
+### Activate Virtual Environment
+```batch
+.venv\Scripts\activate.bat
+```
+
+### Deactivate Virtual Environment
+```batch
+deactivate
+```
+
+### List Installed Packages
+```batch
+pip list
+```
+
+### Install Additional Package
+```batch
+pip install package_name
+```
+
+### Update All Packages
+```batch
+pip install --upgrade -r requirements.txt
+```
+
+---
+
+## 🔍 Monitoring & Debugging
+
+### Check GPU Status
+```batch
+nvidia-smi
+```
+
+### Check GPU Memory Usage
+```batch
+nvidia-smi -l 1
+```
+
+### Monitor CPU Usage During Training
+```batch
+tasklist | findstr python
+```
+
+### View Training Plots
+Navigate to: `runs/train_001/plots/` and open `results.png`
+
+### View Confusion Matrix
+Navigate to: `runs/train_001/plots/confusion_matrix.png`
+
+---
+
+## 📁 Project Structure Reference
+
+```
+YOLO/
+├── raw_dataset/              # Your raw images
+├── dataset/                  # Processed dataset (auto-created)
+│   ├── images/train/, val/, test/
+│   ├── labels/train/, val/, test/
+│   └── data.yaml
+├── configs/
+│   └── train_config.yaml     # Training settings
+├── scripts/
+│   ├── split_dataset.py      # Dataset split script
+│   ├── label_images.py       # Annotation launcher
+│   ├── train_optimized.py    # Training script
+│   ├── validate_model.py     # Validation script
+│   ├── inference.py          # Inference script
+│   ├── export_model.py       # Export script
+│   └── check_setup.py        # Setup verification
+├── runs/                     # Training outputs (auto-created)
+│   └── train_001/weights/best.pt  # Your trained model
+├── docs/                     # Documentation
+└── *.bat files               # Batch quick-start scripts
+```
+
+---
+
+## 🆘 Common Issues & Solutions
+
+### Python 3.10 Not Found
+```batch
+# Download from: https://www.python.org/downloads/release/python-3100/
+# During install, check "Add Python to PATH"
+# Verify:
+python3.10 --version
+```
+
+### Virtual Environment Errors
+```batch
+# Delete old venv and recreate
+rmdir /s /q .venv
+python3.10 -m venv .venv
+.venv\Scripts\activate.bat
+pip install -r requirements.txt
+```
+
+### CUDA Out of Memory
+```batch
+# Reduce batch size
+python scripts\train_optimized.py --batch 32
+
+# Or reduce image size
+python scripts\train_optimized.py --imgsz 512
+
+# Or use smaller model
+python scripts\train_optimized.py --model yolo11s.pt
+```
+
+### Training Not Using GPU
+```batch
+# Check GPU with
+nvidia-smi
+
+# Reinstall PyTorch
+pip uninstall torch torchvision torchaudio
+python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+```
+
+### Dataset Not Found
+```batch
+# Verify folder structure:
+# C:\path\to\YOLO\dataset\data.yaml must exist
+
+# Create it manually:
+python scripts\label_images.py --config --num-classes 3
+```
+
+---
+
+## 📊 Default Optimized Settings (RTX 5080)
+
+| Setting | Value | Notes |
+|---------|-------|-------|
+| Model | yolo11m.pt | Good balance |
+| Batch Size | 64 | Maximum for RTX 5080 |
+| Image Size | 640 | Balanced speed/accuracy |
+| Epochs | 1000 | Maximum accuracy |
+| Learning Rate | Auto | Optimized per epoch |
+| Augmentation | Full | Mosaic, mixup, copy-paste |
+| Workers | 16 | Data loading threads |
+
+---
+
+## 📚 Documentation Links
+
+- **Installation:** `docs/INSTALLATION.md`
+- **Dataset Guide:** `docs/DATASET_GUIDE.md`
+- **Training Guide:** `docs/TRAINING_GUIDE.md`
+- **GPU Optimization:** `docs/RTX5080_OPTIMIZED.md`
+- **Main README:** `README.md`
+
+---
+
+## 💡 Quick Tips
+
+✅ **Best Practices:**
+- Always verify `dataset/data.yaml` has correct class names
+- Use `best.pt` for deployment, not `last.pt`
+- Export to ONNX for cross-platform compatibility
+- Monitor GPU with `nvidia-smi` during training
+
+❌ **Common Mistakes:**
+- Forgetting to activate virtual environment
+- Using wrong dataset path in data.yaml
+- Training with mismatched image sizes
+- Not verifying GPU is being used
+
+🎯 **Performance Tips:**
+- Clean, well-labeled data → biggest impact
+- Larger datasets → better accuracy
+- More epochs → better accuracy (with patience)
+- Batch size 64 → optimal for RTX 5080
+

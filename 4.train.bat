@@ -30,7 +30,7 @@ REM Verify dataset config exists
 echo [1/3] Checking dataset configuration...
 if not exist "dataset\data.yaml" (
     echo ERROR: Dataset config not found!
-    echo Please run quickstart_dataset.bat first to prepare the dataset.
+    echo Please run 2.dataset.bat first to prepare the dataset.
     echo.
     pause
     exit /b 1

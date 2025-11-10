@@ -1,287 +1,333 @@
-````markdown
 # Training Guide
 
-Complete YOLO11 training instructions optimized for RTX 5080.
+Train your YOLO model with optimized settings for RTX 5080.
 
 ---
 
-## Prerequisites
+## 📋 Overview
 
-Before training, ensure:
-1. Installation complete (`docs/INSTALLATION.md`)
-2. Dataset prepared (`docs/DATASET_GUIDE.md`)
-3. `dataset/data.yaml` configured with your classes
-4. `dataset/labels/train/` populated with annotations
+This guide covers:
+1. Starting training
+2. Understanding training output
+3. Validating your model
+4. Exporting for deployment
 
 ---
 
-## 🚀 Training Commands
+## 🚀 Step 1: Start Training
 
-### Basic Training
+### Option 1: Double-Click (Easiest) ⭐
 
-```powershell
-python scripts/train_optimized.py --data dataset/data.yaml
+**Step 4:** Simply **double-click** `4.train.bat` in the project root.
+
+The script will:
+1. Verify dataset exists
+2. Activate virtual environment
+3. Start training with optimized settings:
+   - Model: yolo11m.pt
+   - Epochs: 1000
+   - Batch: 64
+   - Image size: 640px
+   - Learning rate: auto-optimized
+
+**Time:** 2-8 hours depending on dataset size
+
+### Option 2: Command Line
+
+```batch
+4.train.bat
 ```
 
-### With Custom Settings
-
-```powershell
-# 100 epochs, batch 40, image size 832
-python scripts/train_optimized.py --data dataset/data.yaml --epochs 100 --batch 40 --imgsz 832
-
-# No resume (fresh start)
-python scripts/train_optimized.py --data dataset/data.yaml --no-resume
-
-# Specific model (yolo11s, yolo11m, yolo11l, yolo11x)
-python scripts/train_optimized.py --data dataset/data.yaml --model yolo11l.pt
+Or manually:
+```batch
+.venv\Scripts\activate.bat
+python scripts\train_optimized.py --data dataset/data.yaml --model yolo11m.pt --epochs 1000 --batch 64 --imgsz 640
 ```
+
+### Custom Training Parameters
+
+```batch
+python scripts\train_optimized.py ^
+  --data dataset/data.yaml ^
+  --model yolo11m.pt ^
+  --epochs 500 ^
+  --batch 64 ^
+  --imgsz 640 ^
+  --patience 150 ^
+  --device 0
+```
+
+**Common parameters:**
+- `--epochs`: Number of epochs (default: 1000)
+- `--batch`: Batch size (default: 64, max for RTX 5080)
+- `--imgsz`: Image size in pixels (default: 640, options: 416, 512, 640, 768, 1024)
+- `--patience`: Early stopping patience (default: 150)
+- `--device`: GPU device ID (default: 0, use -1 for CPU)
+- `--resume`: Resume from last checkpoint (automatic)
 
 ---
 
-## 🎯 Model Selection
+## 📊 Understanding Training Output
 
-| Model | Speed | Accuracy | VRAM | Best For |
-|-------|-------|----------|------|----------|
-| yolo11n | ⚡⚡⚡⚡⚡ | ⭐⭐ | 4GB | Edge devices |
-| yolo11s | ⚡⚡⚡⚡ | ⭐⭐⭐ | 6GB | Fast inference |
-| **yolo11m** | ⚡⚡⚡ | ⭐⭐⭐⭐ | 8GB+ | **Balanced (Recommended)** |
-| yolo11l | ⚡⚡ | ⭐⭐⭐⭐⭐ | 12GB+ | High accuracy |
-| yolo11x | ⚡ | ⭐⭐⭐⭐⭐ | 16GB+ | Maximum accuracy |
-
-**For RTX 5080:** Start with `yolo11m.pt`, upgrade to `yolo11l.pt` or `yolo11x.pt` for higher accuracy.
-
----
-
-## 📊 Batch Size Recommendations for RTX 5080 (16GB)
-
-Adjust batch size based on image size and model:
-
-| Image Size | yolo11n | yolo11s | yolo11m | yolo11l | yolo11x |
-|-----------|---------|---------|---------|---------|---------|
-| 640 | 96 | 64 | 48 | 32 | 24 |
-| 832 | 64 | 48 | 40 | 24 | 16 |
-| 1024 | 48 | 32 | 24 | 16 | 12 |
-
-**RTX 5080 sweet spot:** Image size 832, batch 40-48, yolo11m-l
-
----
-
-## ⚙️ Configuration File
-
-Edit `configs/train_config.yaml` to customize defaults:
-
-```yaml
-model: yolo11m.pt      # Model to use
-image_size: 832        # Input image size
-batch_size: 40         # Batch size
-epochs: 500            # Total epochs
-patience: 100          # Early stopping patience
-workers: 8             # Data loading workers
-```
-
----
-
-## 📈 Training Output
-
-Training results saved to: `runs/train_YYYYMMDD_HHMMSS/`
+### Console Output
 
 ```
-runs/train_xxx/
-├── weights/
-│   ├── best.pt        # Best model (highest mAP)
-│   └── last.pt        # Last checkpoint
-├── results.png        # Training curves
-├── confusion_matrix.png
-└── results.csv
+Epoch   1/1000: 100%|████████| 10/10 [00:15<00:00,  0.67s/batch]
+        box_loss: 1.234
+        cls_loss: 0.567
+        dfl_loss: 0.890
+        val loss: 2.691
 ```
 
-Monitor training in real-time with TensorBoard:
-```powershell
-tensorboard --logdir runs/detect
+**Key metrics:**
+- `box_loss`: Bounding box regression loss (lower = better)
+- `cls_loss`: Classification loss (lower = better)
+- `dfl_loss`: Distribution focal loss (lower = better)
+- `val loss`: Validation loss (lower = better)
+
+### Training Folder Structure
+
 ```
-
----
-
-## ✅ Validation
-
-Validate trained model:
-
-```powershell
-python scripts/validate_model.py --model runs/train_xxx/weights/best.pt --data dataset/data.yaml
+runs/
+└── train_<number>/
+    ├── weights/
+    │   ├── last.pt          # Last checkpoint
+    │   └── best.pt          # Best model (use this)
+    ├── plots/
+    │   ├── results.png      # Training plots
+    │   ├── confusion_matrix.png
+    │   └── ...
+    └── results.csv          # Training metrics
 ```
 
 ---
 
-## 📤 Export Model
+## 🎯 Step 2: Validate Model
 
-Export to ONNX (recommended for deployment):
+After training completes, validate your model:
 
-```powershell
-python scripts/export_model.py --model runs/train_xxx/weights/best.pt --formats onnx
+```batch
+python scripts\validate_model.py --model runs/train_001/weights/best.pt --data dataset/data.yaml
 ```
 
-Export to multiple formats:
-```powershell
-python scripts/export_model.py --model runs/train_xxx/weights/best.pt --formats onnx torchscript engine
+**Output metrics:**
+- `Precision`: Correctness of positive predictions
+- `Recall`: Ability to find all positives
+- `mAP@0.5`: Mean average precision at 0.5 IoU
+- `mAP@0.5:0.95`: Mean average precision at 0.5-0.95 IoU
+
+### Interpreting Results
+
+| Metric | Good Range | Meaning |
+|--------|-----------|---------|
+| Precision | > 0.9 | Few false positives |
+| Recall | > 0.85 | Finds most objects |
+| mAP@0.5 | > 0.8 | Good detection accuracy |
+| mAP@0.5:0.95 | > 0.6 | High quality detections |
+
+---
+
+## 🔍 Step 3: Run Inference
+
+Test your model on new images:
+
+```batch
+python scripts\inference.py --model runs/train_001/weights/best.pt --source image.jpg
+```
+
+**Options:**
+```batch
+python scripts\inference.py ^
+  --model runs/train_001/weights/best.pt ^
+  --source image.jpg ^
+  --conf 0.5 ^
+  --iou 0.5
+```
+
+- `--model`: Path to model weights
+- `--source`: Image/video/folder path
+- `--conf`: Confidence threshold (0-1, default: 0.5)
+- `--iou`: IoU threshold (0-1, default: 0.5)
+
+### Batch Inference
+
+Predict on multiple images:
+```batch
+python scripts\inference.py --model runs/train_001/weights/best.pt --source dataset/images/test/
+```
+
+### Video Inference
+
+Predict on video:
+```batch
+python scripts\inference.py --model runs/train_001/weights/best.pt --source video.mp4
 ```
 
 ---
 
-## 🎯 Inference
+## 📦 Step 4: Export Model
 
-Run predictions:
+Export your trained model for deployment:
 
-```powershell
-# Single image
-python scripts/inference.py --model runs/train_xxx/weights/best.pt --source image.jpg
+### Export to ONNX (Recommended for most uses)
 
-# Folder of images
-python scripts/inference.py --model runs/train_xxx/weights/best.pt --source path/to/images/
-
-# Video
-python scripts/inference.py --model runs/train_xxx/weights/best.pt --source video.mp4
-
-# Webcam
-python scripts/inference.py --model runs/train_xxx/weights/best.pt --source 0 --show
+```batch
+python scripts\export_model.py --model runs/train_001/weights/best.pt --formats onnx
 ```
 
----
+**Output:** `runs/train_001/weights/best.onnx`
 
-## 🔥 Training Strategies
+### Export to TensorRT (Fastest on NVIDIA GPUs)
 
-### For Maximum Accuracy
-
-```yaml
-model: yolo11x.pt      # Largest model
-image_size: 1024       # High resolution
-batch_size: 12         # Large effective batch
-epochs: 800            # More training
-patience: 200          # Late stopping
+```batch
+python scripts\export_model.py --model runs/train_001/weights/best.pt --formats engine
 ```
 
-### For Speed
+**Output:** `runs/train_001/weights/best.engine`
 
-```yaml
-model: yolo11n.pt      # Smallest model
-image_size: 640        # Lower resolution
-batch_size: 64         # Optimize GPU
-epochs: 300            # Quick training
+### Export Multiple Formats
+
+```batch
+python scripts\export_model.py --model runs/train_001/weights/best.pt --formats onnx engine pb
 ```
 
-### For Small Datasets (<500 images)
-
-```yaml
-model: yolo11s.pt      # Smaller model
-image_size: 640        # Lower resolution
-batch_size: 16         # Conservative
-epochs: 300            # Prevent overfitting
-patience: 50           # Early stop
-```
-
-### For Limited GPU Memory
-
-```yaml
-batch_size: 8          # Small batch
-image_size: 640        # Small images
-workers: 4             # Fewer workers
-```
-
----
-
-## 📊 Performance Benchmarks
-
-### Training Time (500 epochs, 1000 images, RTX 5080)
-
-| Image Size | yolo11n | yolo11s | yolo11m | yolo11l | yolo11x |
-|-----------|---------|---------|---------|---------|---------|
-| 640 | 0.5h | 0.8h | 1.2h | 2h | 3h |
-| 832 | 0.8h | 1.2h | 1.8h | 3h | 4h |
-| 1024 | 1.2h | 1.8h | 2.5h | 4h | 5h |
-
-### Inference Speed (FPS at batch 1, RTX 5080)
-
-| Model | 640 | 832 | 1024 |
-|-------|-----|-----|------|
-| yolo11n | 450+ | 350+ | 300+ |
-| yolo11s | 380+ | 300+ | 250+ |
-| yolo11m | 250+ | 200+ | 150+ |
-| yolo11l | 180+ | 150+ | 100+ |
-| yolo11x | 100+ | 80+ | 60+ |
+**Supported formats:**
+- `pt` - PyTorch (native)
+- `onnx` - ONNX format (cross-platform)
+- `engine` - TensorRT (NVIDIA optimized)
+- `pb` - TensorFlow (SavedModel)
+- `tflite` - TensorFlow Lite (mobile)
+- `torchscript` - TorchScript (C++ compatible)
 
 ---
 
 ## 🆘 Troubleshooting
 
-### CUDA Out of Memory
+### Training Crashes with Out of Memory
 
-```powershell
-# Reduce batch size
-python scripts/train_optimized.py --data dataset/data.yaml --batch 8
+**Error:** `CUDA out of memory`
 
-# Reduce image size
-python scripts/train_optimized.py --data dataset/data.yaml --imgsz 640
-```
+**Solution:**
+1. Reduce batch size:
+   ```batch
+   python scripts\train_optimized.py --batch 32
+   ```
+2. Reduce image size:
+   ```batch
+   python scripts\train_optimized.py --imgsz 512
+   ```
+3. Use smaller model:
+   ```batch
+   python scripts\train_optimized.py --model yolo11s.pt
+   ```
 
-### Training Too Slow
+### Training is Very Slow
 
-```powershell
-# Increase batch size
-python scripts/train_optimized.py --data dataset/data.yaml --batch 64
+**Error:** Training takes too long
 
-# Enable caching
-python scripts/train_optimized.py --data dataset/data.yaml --cache ram
-```
+**Solution:**
+1. Reduce image size to 512 or 416
+2. Reduce epochs: `--epochs 300`
+3. Increase batch size (if memory allows)
+4. Check GPU usage with: `nvidia-smi` (should be > 90%)
 
-### Low Accuracy
+### Model Not Converging (Loss stuck high)
 
-1. Train longer (increase epochs)
-2. Use larger model (yolo11l vs yolo11m)
-3. Increase image size to 1024
-4. Collect more training data
-5. Improve annotation quality
-6. Check for class imbalance
+**Error:** Loss plateaus and doesn't decrease
 
-### Overfitting (train loss low, val loss high)
+**Solution:**
+1. Increase training time: `--epochs 2000`
+2. Reduce learning rate multiplier (in code)
+3. Check dataset quality and balance
+4. Verify data.yaml is correct
 
-1. Collect more data
-2. Use data augmentation
-3. Reduce model size
-4. Train fewer epochs
-5. Enable early stopping
+### Best Model Not Improving After 150 Epochs
 
----
+**Information:** Training stops early (as intended)
 
-## 📚 Quick Commands
-
-```powershell
-# Train
-python scripts/train_optimized.py --data dataset/data.yaml
-
-# Resume training
-python scripts/train_optimized.py --data dataset/data.yaml --resume
-
-# Validate
-python scripts/validate_model.py --model runs/train_xxx/weights/best.pt --data dataset/data.yaml
-
-# Inference
-python scripts/inference.py --model runs/train_xxx/weights/best.pt --source test.jpg
-
-# Export
-python scripts/export_model.py --model runs/train_xxx/weights/best.pt --formats onnx
-```
+**Solution:**
+1. Increase patience: `--patience 300`
+2. Collect more training data
+3. Improve data quality/annotation
+4. Check for class imbalance
 
 ---
 
-## 🏆 Expected Results
+## 📈 Training Tips for Best Results
 
-**Good Model:**
-- mAP@0.5: > 0.85
-- mAP@0.5:0.95: > 0.60
-- Precision: > 0.85
-- Recall: > 0.80
+### Dataset Quality
+
+- ✅ Clean, well-labeled data is most important
+- ✅ Balanced classes (similar number of each class)
+- ✅ Diverse backgrounds and lighting
+- ✅ Multiple angles and distances
+
+### Hyperparameter Tuning
+
+**For higher accuracy:**
+- Increase epochs to 1000-2000
+- Larger image size: 768 or 1024 (needs more VRAM)
+- Smaller batch size (less memory but slower)
+
+**For faster training:**
+- Reduce epochs to 300-500
+- Smaller image size: 416-512
+- Larger batch size (needs more VRAM)
+
+### Early Stopping
+
+Training automatically stops if:
+- No improvement for 150 epochs (patience)
+- Can extend with `--patience 300`
+
+### Resuming Training
+
+If training is interrupted:
+```batch
+python scripts\train_optimized.py --data dataset/data.yaml --resume
+```
+
+This will:
+1. Find the latest checkpoint
+2. Resume from that epoch
+3. Continue training
 
 ---
 
-**Good luck training! 🚀**
+## RTX 5080 Optimized Settings
 
-````
+**Default configuration for best performance:**
+
+```yaml
+# configs/train_config.yaml
+epochs: 1000              # Maximum accuracy
+batch: 64                 # Optimal for RTX 5080 (16GB VRAM)
+imgsz: 640                # Balance speed vs accuracy
+workers: 16               # Maximize data loading
+device: 0                 # GPU device ID
+
+# Augmentation (recommended)
+mosaic: 1.0               # Always mix images
+mixup: 0.2                # 20% blend images
+copy_paste: 0.5           # 50% copy-paste
+```
+
+These settings achieve:
+- ✅ Best accuracy
+- ✅ Reasonable training time (2-8 hours)
+- ✅ Full GPU utilization
+- ✅ No memory issues
+
+See `docs/RTX5080_OPTIMIZED.md` for detailed GPU tuning.
+
+---
+
+## ✅ Next Steps
+
+After training and validation:
+
+1. **Deploy model** to your application
+2. **Monitor performance** in production
+3. **Collect feedback** and retrain periodically
+4. **Fine-tune** on new data as needed
+

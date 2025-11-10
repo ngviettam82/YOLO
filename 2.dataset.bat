@@ -79,11 +79,11 @@ echo ======================================
 echo.
 echo Next steps:
 echo 1. Label your training images:
-echo    Double-click quickstart_label.bat
+echo    Double-click 3.label.bat
 echo.
 echo 2. Update class names in dataset/data.yaml
 echo.
 echo 3. Start training:
-echo    Double-click quickstart_train.bat
+echo    Double-click 4.train.bat
 echo.
 pause

@@ -69,7 +69,8 @@ imgaug>=0.4.0                   # Image augmentation library
 # ===================================================================
 
 # Dataset tools
-labelImg>=1.8.0                 # Image labeling tool (if labeling data)
+label-studio>=1.11.0            # Web-based annotation tool (DEFAULT)
+# labelImg>=1.8.0               # Image labeling tool (deprecated - has PyQt5 compatibility issues)
 # roboflow>=1.1.0               # Roboflow dataset integration (optional)
 
 # Performance profiling

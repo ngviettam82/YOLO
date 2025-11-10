@@ -52,18 +52,31 @@ echo Found !count! images ready for labeling
 echo.
 
 REM Launch annotation tool
-echo [2/2] Launching LabelImg annotation tool...
+echo [2/2] Launching annotation tool...
 echo.
-echo Instructions:
-echo 1. Use arrow keys or mouse to navigate
-echo 2. Click "Create RectBox" to draw bounding boxes
-echo 3. Name the object with its class (e.g., 'person', 'car')
-echo 4. Save after each image
-echo 5. Annotations will be saved as .xml files
+
+REM Default to Label Studio (web-based, reliable, no desktop GUI issues)
+echo Using Label Studio as the default annotation tool
 echo.
-python scripts\label_images.py --tool labelimg
+python scripts\label_images.py --tool label-studio
 if errorlevel 1 (
-    echo ERROR: Labeling tool failed!
+    echo.
+    echo ERROR: Label Studio failed to launch!
+    echo.
+    echo Troubleshooting options:
+    echo 1. Install Label Studio manually:
+    echo    .venv\Scripts\activate.bat
+    echo    pip install label-studio
+    echo.
+    echo 2. Start Label Studio manually:
+    echo    .venv\Scripts\activate.bat
+    echo    label-studio
+    echo.
+    echo 3. Open browser to: http://localhost:8080
+    echo.
+    echo 4. Alternative: Use Roboflow (AI-assisted, cloud-based)
+    echo    python scripts\label_images.py --tool roboflow
+    echo.
     pause
     exit /b 1
 )
@@ -74,9 +87,13 @@ echo   Labeling Complete!
 echo ======================================
 echo.
 echo Next steps:
-echo 1. Update class names in dataset/data.yaml
+echo 1. Export annotations from Label Studio as YOLO format
 echo.
-echo 2. Start training:
-echo    Double-click quickstart_train.bat
+echo 2. Place .txt files in: dataset\labels\train\
+echo.
+echo 3. Update class names in dataset/data.yaml
+echo.
+echo 4. Start training:
+echo    Double-click 4.train.bat
 echo.
 pause

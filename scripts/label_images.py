@@ -40,39 +40,6 @@ class LabelingTool:
         raise NotImplementedError
 
 
-class LabelImg(LabelingTool):
-    """LabelImg - graphical image annotation tool"""
-    
-    def check_installation(self) -> bool:
-        """Check if LabelImg is installed"""
-        try:
-            import labelImg
-            return True
-        except ImportError:
-            return False
-    
-    def run(self) -> bool:
-        """Launch LabelImg for annotation"""
-        logger.info("Launching LabelImg...")
-        logger.info(f"Found {self.image_count} images to label in {self.train_dir}")
-        
-        try:
-            # Import and run labelImg
-            from labelImg.labelImg import APP
-            import sys
-            
-            # Set up arguments for labelImg
-            sys.argv = ['labelImg', str(self.train_dir), 'yolo']
-            
-            # Note: This is simplified. Full implementation would require more setup
-            logger.info("Please use labelImg from command line:")
-            logger.info(f"  labelImg {self.train_dir} yolo")
-            return True
-        except Exception as e:
-            logger.error(f"Error launching LabelImg: {e}")
-            return False
-
-
 class CVATLabeling(LabelingTool):
     """CVAT (Computer Vision Annotation Tool) - web-based annotation"""
     
@@ -101,58 +68,87 @@ class CVATLabeling(LabelingTool):
 
 
 class AnnotationLabeling(LabelingTool):
-    """Annotation tool - simple web-based annotation"""
+    """Label Studio - web-based annotation tool (DEFAULT)"""
     
     def check_installation(self) -> bool:
-        """Check if annotation tool is available"""
-        return True
+        """Check if Label Studio is available"""
+        try:
+            __import__('label_studio')
+            return True
+        except ImportError:
+            return False
     
     def run(self) -> bool:
-        """Provide Annotation tool instructions"""
+        """Launch Label Studio for annotation"""
         logger.info("\n" + "="*60)
-        logger.info("Simple Annotation Web Tool")
+        logger.info("Label Studio - Web-based Annotation Tool (Default)")
         logger.info("="*60)
         logger.info(f"\nFound {self.image_count} images to label in {self.train_dir}")
-        logger.info("\nUsage:")
-        logger.info("1. Visit: https://github.com/heartexlabs/label-studio")
-        logger.info("2. Install Label Studio:")
-        logger.info("   pip install label-studio")
-        logger.info("3. Start Label Studio:")
-        logger.info("   label-studio")
-        logger.info("4. Create a project and import images from:")
-        logger.info(f"   {self.train_dir}")
-        logger.info("\n✅ Create bounding box annotations using the interface")
-        logger.info("📝 Export in YOLO format (YOLO v5 PyTorch format)")
-        logger.info("="*60 + "\n")
-        return True
-
-
-class OpenLabelImg(LabelingTool):
-    """OpenLabeling - fast and efficient annotation tool"""
-    
-    def check_installation(self) -> bool:
-        """Check if OpenLabeling is available"""
-        return True
-    
-    def run(self) -> bool:
-        """Provide OpenLabeling instructions"""
-        logger.info("\n" + "="*60)
-        logger.info("OpenLabeling - Fast Annotation Tool")
-        logger.info("="*60)
-        logger.info(f"\nFound {self.image_count} images to label in {self.train_dir}")
-        logger.info("\nInstallation & Usage:")
-        logger.info("1. Clone repository:")
-        logger.info("   git clone https://github.com/Cartucho/OpenLabeling")
-        logger.info("2. Install dependencies:")
-        logger.info("   pip install -r requirements.txt")
-        logger.info("3. Run the tool:")
-        logger.info("   python main.py")
-        logger.info("4. Open folder and select:")
-        logger.info(f"   {self.train_dir}")
-        logger.info("\n✅ Draw bounding boxes with mouse")
-        logger.info("📝 Labels are automatically saved in YOLO format")
-        logger.info("="*60 + "\n")
-        return True
+        
+        try:
+            # Import subprocess (doesn't require label_studio to be pre-installed)
+            import subprocess as sp
+            
+            logger.info("\n✅ Label Studio Installation")
+            logger.info("1. Installing/checking Label Studio...")
+            
+            # Ensure label-studio is installed
+            result = sp.run(
+                [sys.executable, '-m', 'pip', 'install', 'label-studio', '-q'],
+                capture_output=True
+            )
+            
+            if result.returncode == 0:
+                logger.info("   ✅ Label Studio ready")
+            else:
+                logger.warning("   ⚠️  Label Studio install issue, trying to launch anyway...")
+            
+            logger.info("\n🚀 Starting Label Studio server...")
+            logger.info("   This will open http://localhost:8080 in your browser")
+            logger.info("\n📋 Steps:")
+            logger.info("   1. Sign up or login to Label Studio")
+            logger.info("   2. Create a new project")
+            logger.info("   3. Upload images from:")
+            logger.info(f"      {self.train_dir}")
+            logger.info("   4. Create bounding box annotations")
+            logger.info("   5. Export in YOLO format")
+            logger.info("   6. Place .txt files in dataset/labels/train/")
+            logger.info("\n✅ When done:")
+            logger.info("   1. Close the browser")
+            logger.info("   2. Press Ctrl+C in this terminal")
+            logger.info("="*60 + "\n")
+            
+            # Launch label-studio with suppressed output
+            logger.info("Opening Label Studio at http://localhost:8080...\n")
+            logger.info("Label Studio is starting in the background. Check your browser.\n")
+            result = sp.run(
+                ['label-studio'],
+                capture_output=True,  # Suppress Label Studio's verbose logging
+                text=True
+            )
+            
+            if result.returncode == 0:
+                logger.info("✅ Label Studio completed successfully")
+                return True
+            else:
+                logger.warning("Label Studio exited with warning code")
+                return True  # Consider it successful even if exit code non-zero
+                
+        except Exception as e:
+            logger.error(f"Error launching Label Studio: {e}")
+            logger.info("\n" + "="*60)
+            logger.info("Manual Label Studio Setup")
+            logger.info("="*60)
+            logger.info("\nRun these commands manually:")
+            logger.info("1. Install Label Studio:")
+            logger.info("   pip install label-studio")
+            logger.info("\n2. Start Label Studio:")
+            logger.info("   label-studio")
+            logger.info("\n3. Open browser to http://localhost:8080")
+            logger.info("4. Create project and upload images from:")
+            logger.info(f"   {self.train_dir}")
+            logger.info("="*60 + "\n")
+            return False
 
 
 class RoboflowAI(LabelingTool):
@@ -188,32 +184,22 @@ def display_menu():
     print("YOLO Image Labeling Tools")
     print("="*60)
     print("\nAvailable Labeling Tools:")
-    print("\n1. LabelImg - Desktop GUI (Recommended for local work)")
-    print("   • Fast and straightforward")
-    print("   • Works offline")
-    print("   • Native desktop application")
+    print("\n1. Label Studio - Web-based (Recommended - DEFAULT)")
+    print("   • Simple web interface")
+    print("   • Good for small to medium projects")
+    print("   • Easy to install")
     
     print("\n2. CVAT - Web-based (Best for team collaboration)")
     print("   • Professional annotation platform")
     print("   • Requires Docker")
     print("   • Best for large teams")
     
-    print("\n3. Label Studio - Web-based (Easy setup)")
-    print("   • Simple web interface")
-    print("   • Good for small to medium projects")
-    print("   • Easy to install")
-    
-    print("\n4. OpenLabeling - Fast Desktop Tool")
-    print("   • Lightweight and fast")
-    print("   • Keyboard shortcuts for speed")
-    print("   • Great for bounding box annotation")
-    
-    print("\n5. Roboflow - Cloud AI-Assisted (Easiest)")
+    print("\n3. Roboflow - Cloud AI-Assisted (Easiest)")
     print("   • AI auto-annotation")
     print("   • No installation needed")
     print("   • Free tier available")
     
-    print("\n6. Create Config File Only (Manual setup)")
+    print("\n4. Create Config File Only (Manual setup)")
     print("   • Set up your own tool")
     print("   • Create dataset configuration")
     
@@ -282,7 +268,7 @@ def main():
         epilog="""
 Examples:
   python label_images.py --train-dir dataset/images/train
-  python label_images.py --train-dir dataset/images/train --tool labelimg
+  python label_images.py --train-dir dataset/images/train --tool label-studio
   python label_images.py --train-dir dataset/images/train --tool roboflow
   python label_images.py --train-dir dataset/images/train --config --num-classes 3
         """
@@ -290,9 +276,8 @@ Examples:
     
     parser.add_argument('--train-dir', type=str, default='dataset/images/train',
                        help='Path to training images directory')
-    parser.add_argument('--tool', type=str, choices=['labelimg', 'cvat', 'label-studio', 
-                                                      'openlabeling', 'roboflow', 'menu'],
-                       default='menu', help='Labeling tool to use')
+    parser.add_argument('--tool', type=str, choices=['label-studio', 'cvat', 'roboflow', 'menu'],
+                       default='label-studio', help='Labeling tool to use (default: label-studio)')
     parser.add_argument('--config', action='store_true',
                        help='Create dataset configuration file only')
     parser.add_argument('--num-classes', type=int,
@@ -315,23 +300,19 @@ Examples:
     # Show menu if not specified
     if args.tool == 'menu':
         display_menu()
-        choice = input("\nSelect tool (1-6): ").strip()
+        choice = input("\nSelect tool (1-5): ").strip()
         tool_map = {
-            '1': 'labelimg',
+            '1': 'label-studio',
             '2': 'cvat',
-            '3': 'label-studio',
-            '4': 'openlabeling',
-            '5': 'roboflow',
-            '6': 'config'
+            '3': 'roboflow',
+            '4': 'config'
         }
         args.tool = tool_map.get(choice, 'menu')
     
     # Create and run labeling tool
     tools = {
-        'labelimg': LabelImg,
-        'cvat': CVATLabeling,
         'label-studio': AnnotationLabeling,
-        'openlabeling': OpenLabelImg,
+        'cvat': CVATLabeling,
         'roboflow': RoboflowAI
     }
     

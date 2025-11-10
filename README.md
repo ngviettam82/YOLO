@@ -55,10 +55,10 @@ YOLO/
 │   ├── TRAINING_GUIDE.md   # Training guide
 │   ├── QUICK_REFERENCE.md  # Quick reference
 │   └── RTX5080_OPTIMIZED.md # GPU optimization
-├── install.bat             # 🚀 Setup environment
-├── quickstart_dataset.bat  # 🚀 Prepare dataset
-├── quickstart_label.bat    # 🚀 Label images
-├── quickstart_train.bat    # 🚀 Start training
+├── 🚀 1.install.bat             # Step 1: Setup environment
+├── 🚀 2.dataset.bat             # Step 2: Prepare dataset
+├── 🚀 3.label.bat               # Step 3: Label images
+├── 🚀 4.train.bat               # Step 4: Start training
 └── README.md               # This file
 ```
 
@@ -66,10 +66,12 @@ YOLO/
 
 ### Option 1: Double-click BAT Files (Easiest - Recommended ⭐)
 
-1. **Double-click** `install.bat` - Setup environment (Python, PyTorch, dependencies)
-2. **Double-click** `quickstart_dataset.bat` - Prepare and split dataset
-3. **Double-click** `quickstart_label.bat` - Label images with LabelImg
-4. **Double-click** `quickstart_train.bat` - Start training with RTX 5080 optimized settings
+**Follow these steps in order:**
+
+1. **Double-click** `1.install.bat` - Setup environment (Python, PyTorch, dependencies)
+2. **Double-click** `2.dataset.bat` - Prepare and split dataset
+3. **Double-click** `3.label.bat` - Label images with LabelImg
+4. **Double-click** `4.train.bat` - Start training with RTX 5080 optimized settings
 
 That's it! All files will activate the virtual environment and run automatically.
 
@@ -77,7 +79,7 @@ That's it! All files will activate the virtual environment and run automatically
 
 **Step 1: Setup Environment**
 ```bash
-install.bat
+1.install.bat
 ```
 Or manually:
 ```bash
@@ -89,7 +91,7 @@ python scripts\check_setup.py
 
 **Step 2: Prepare Dataset**
 ```bash
-quickstart_dataset.bat
+2.dataset.bat
 ```
 Or manually:
 ```bash
@@ -99,7 +101,7 @@ python scripts\split_dataset.py --train 0.7 --val 0.2 --test 0.1
 
 **Step 3: Label Images**
 ```bash
-quickstart_label.bat
+3.label.bat
 ```
 Or manually:
 ```bash
@@ -109,7 +111,7 @@ python scripts\label_images.py --tool labelimg
 
 **Step 4: Train Model**
 ```bash
-quickstart_train.bat
+4.train.bat
 ```
 Or manually:
 ```bash
@@ -125,6 +127,7 @@ python scripts\train_optimized.py --data dataset/data.yaml --model yolo11m.pt --
 - **[Dataset Guide](docs/DATASET_GUIDE.md)** - Dataset preparation & labeling
 - **[Training Guide](docs/TRAINING_GUIDE.md)** - Training, validation & export
 - **[Quick Reference](docs/QUICK_REFERENCE.md)** - All commands in one place
+- **[Labeling Troubleshooting](docs/LABELING_TROUBLESHOOTING.md)** - Fix LabelImg issues & alternatives
 - **[RTX 5080 Optimization](docs/RTX5080_OPTIMIZED.md)** - GPU-specific tips
 
 ## 🤝 Contributing
