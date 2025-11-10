@@ -15,13 +15,22 @@ Professional YOLO11 training setup for maximum performance and accuracy.
 
 ```
 YOLO/
+├── raw_dataset/             # 📥 Place your raw images here
+│   ├── image1.jpg
+│   └── ...
 ├── configs/                 # Configuration files
 │   ├── train_config.yaml   # Training configuration
 │   └── dataset_template.yaml # Dataset YAML template
-├── dataset/                 # Your datasets go here
-│   ├── train/
-│   ├── val/
-│   └── test/
+├── dataset/                 # 📦 Processed datasets (auto-organized)
+│   ├── images/
+│   │   ├── train/          # 70% training images
+│   │   ├── val/            # 20% validation images
+│   │   └── test/           # 10% test images
+│   ├── labels/
+│   │   ├── train/          # Training annotations (YOLO format)
+│   │   ├── val/            # Validation annotations
+│   │   └── test/           # Test annotations
+│   └── data.yaml           # Dataset configuration
 ├── models/                  # Pre-trained model weights
 │   ├── yolo11n.pt
 │   ├── yolo11s.pt
@@ -31,12 +40,19 @@ YOLO/
 │   ├── train_YYYYMMDD_HHMMSS/
 │   └── ...
 ├── scripts/                 # Utility scripts
+│   ├── split_dataset.py    # Split raw images into train/val/test
+│   ├── label_images.py     # Launch annotation tools
 │   ├── validate_model.py   # Model validation
 │   ├── export_model.py     # Model export
 │   └── inference.py        # Run inference
 ├── utils/                   # Helper utilities
-│   └── dataset_utils.py    # Dataset preparation tools
+│   └── dataset_utils.py    # Dataset utilities
+├── examples/                # Example scripts
+│   └── dataset_example.py  # Dataset preparation example
 ├── train_optimized.py      # Main training script
+├── manage_dataset.bat      # Dataset manager (Windows batch)
+├── manage_dataset.ps1      # Dataset manager (PowerShell)
+├── DATASET_GUIDE.md        # Dataset preparation guide
 ├── TRAINING_GUIDE.md       # Comprehensive training guide
 └── README.md               # This file
 ```
@@ -46,42 +62,71 @@ YOLO/
 ### 1. Installation
 
 ```powershell
-# Create virtual environment
-python -m venv venv
-.\venv\Scripts\Activate.ps1
+# Run automated installation
+.\install.ps1
 
-# Install PyTorch with CUDA 12.8 (for RTX 5080)
-python -m pip install --upgrade --force-reinstall torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
-
-# Install dependencies
-pip install ultralytics opencv-python pyyaml
+# Or manually:
+python3.10 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
 
-### 2. Prepare Dataset
+### 2. Prepare Dataset (NEW! 🆕)
 
+#### Easy 3-Step Process:
+
+**Step 1: Add your raw images**
 ```powershell
-# Validate your dataset structure
-python utils/dataset_utils.py validate --dataset dataset
-
-# Or split an existing dataset
-python utils/dataset_utils.py split --source "path/to/data" --output dataset
+# Copy all images to raw_dataset folder
+cp your_images/* raw_dataset/
 ```
+
+**Step 2: Auto-split into train/val/test**
+```powershell
+# Use the interactive dataset manager
+.\manage_dataset.bat
+
+# Or command line:
+.\.venv\Scripts\Activate.ps1
+python scripts/split_dataset.py
+```
+
+**Step 3: Label your images** 
+```powershell
+# Launch annotation tool
+python scripts/label_images.py
+
+# Choose from:
+# 1. LabelImg (Desktop - Recommended)
+# 2. CVAT (Web - Team collaboration)
+# 3. Label Studio (Web - Easy setup)
+# 4. OpenLabeling (Fast desktop)
+# 5. Roboflow (Cloud AI-assisted)
+```
+
+📖 [See DATASET_GUIDE.md for detailed instructions](DATASET_GUIDE.md)
 
 ### 3. Train Model
 
 ```powershell
+# Activate environment
+.\.venv\Scripts\Activate.ps1
+
 # Basic training
-python train_optimized.py --data dataset/your_data.yaml
+python train_optimized.py --data dataset/data.yaml
 
 # With custom config
-python train_optimized.py --data dataset/your_data.yaml --config configs/train_config.yaml
+python train_optimized.py --data dataset/data.yaml --config configs/train_config.yaml
+
+# Custom parameters
+python train_optimized.py --data dataset/data.yaml --epochs 100 --batch 32 --imgsz 832
 ```
 
 ### 4. Validate & Export
 
 ```powershell
 # Validate trained model
-python scripts/validate_model.py --model runs/train_xxx/weights/best.pt --data dataset/your_data.yaml
+python scripts/validate_model.py --model runs/train_xxx/weights/best.pt --data dataset/data.yaml
 
 # Export to ONNX
 python scripts/export_model.py --model runs/train_xxx/weights/best.pt --formats onnx
