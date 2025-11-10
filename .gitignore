@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 *.so
 .Python
-venv/
+.venv/
 env/
 ENV/
 build/
@@ -64,3 +64,5 @@ wandb/
 # OS
 Thumbs.db
 .DS_Store
+
+models/
