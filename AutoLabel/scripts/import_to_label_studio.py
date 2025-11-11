@@ -15,6 +15,7 @@ from typing import List, Dict, Tuple
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext
 import threading
+import yaml
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_ROOT))
@@ -26,6 +27,26 @@ class LabelStudioImporter:
         self.label_folder = None
         self.project_name = None
         self.project_dir = None
+        self.class_names = {}  # Load from data.yaml
+        self.load_class_names()
+        
+    def load_class_names(self):
+        """Load class names from dataset config"""
+        data_yaml = Path(PROJECT_ROOT) / "dataset" / "data.yaml"
+        if data_yaml.exists():
+            try:
+                with open(data_yaml, 'r') as f:
+                    data = yaml.safe_load(f)
+                    if data and 'names' in data:
+                        self.class_names = data['names']
+                        print(f"📋 Loaded {len(self.class_names)} class names from data.yaml")
+            except Exception as e:
+                print(f"⚠️  Could not load class names from data.yaml: {e}")
+                # Use default numeric class names
+                self.class_names = {i: f"class_{i}" for i in range(10)}
+        else:
+            # Use default numeric class names
+            self.class_names = {i: f"class_{i}" for i in range(10)}
         
     def select_folders(self):
         """Select image and label folders"""
@@ -117,6 +138,9 @@ class LabelStudioImporter:
                         box_width = max(0, min(box_width, image_width - x_left))
                         box_height = max(0, min(box_height, image_height - y_top))
                         
+                        # Get class name from loaded names, default to numeric string
+                        class_name = self.class_names.get(class_id, f"class_{class_id}")
+                        
                         tasks.append({
                             "value": {
                                 "x": (x_left / image_width) * 100,
@@ -124,7 +148,7 @@ class LabelStudioImporter:
                                 "width": (box_width / image_width) * 100,
                                 "height": (box_height / image_height) * 100,
                                 "rotation": 0,
-                                "rectanglelabels": [str(class_id)]
+                                "rectanglelabels": [str(class_name)]
                             },
                             "from_name": "label",
                             "to_name": "image",
@@ -146,21 +170,20 @@ class LabelStudioImporter:
             return 640, 480
     
     def create_label_studio_config(self) -> str:
-        """Create Label Studio XML configuration"""
-        config = """<View>
+        """Create Label Studio XML configuration using actual class names"""
+        # Define colors for different classes
+        colors = ["green", "blue", "red", "yellow", "purple", "orange", "cyan", "magenta", "lime", "pink"]
+        
+        # Build Label elements with actual class names
+        labels_xml = ""
+        for class_id, class_name in sorted(self.class_names.items()):
+            color = colors[class_id % len(colors)]
+            labels_xml += f'    <Label value="{class_name}" background="{color}"/>\n'
+        
+        config = f"""<View>
   <Image name="image" value="$image"/>
   <RectangleLabels name="label" toName="image">
-    <Label value="0" background="green"/>
-    <Label value="1" background="blue"/>
-    <Label value="2" background="red"/>
-    <Label value="3" background="yellow"/>
-    <Label value="4" background="purple"/>
-    <Label value="5" background="orange"/>
-    <Label value="6" background="cyan"/>
-    <Label value="7" background="magenta"/>
-    <Label value="8" background="lime"/>
-    <Label value="9" background="pink"/>
-  </RectangleLabels>
+{labels_xml}  </RectangleLabels>
 </View>"""
         return config
     
