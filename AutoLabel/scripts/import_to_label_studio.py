@@ -15,6 +15,7 @@ from typing import List, Dict, Tuple
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext
 import threading
+import yaml
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.append(str(PROJECT_ROOT))
@@ -26,6 +27,58 @@ class LabelStudioImporter:
         self.label_folder = None
         self.project_name = None
         self.project_dir = None
+        self.class_names = {}  # Maps class_id to user-defined name
+        self.detected_class_ids = set()  # Actual IDs found in labels
+        
+    def detect_class_ids_from_labels(self):
+        """Detect all class IDs present in label files"""
+        self.detected_class_ids = set()
+        
+        if not self.label_folder:
+            return
+        
+        try:
+            for label_file in self.label_folder.glob('*.txt'):
+                if label_file.stat().st_size == 0:
+                    continue
+                    
+                with open(label_file, 'r') as f:
+                    for line in f:
+                        parts = line.strip().split()
+                        if len(parts) >= 5:
+                            class_id = int(parts[0])
+                            self.detected_class_ids.add(class_id)
+        except Exception as e:
+            print(f"⚠️  Error detecting class IDs: {e}")
+    
+    def prompt_class_names(self):
+        """Prompt user to define custom names for detected class IDs"""
+        self.detect_class_ids_from_labels()
+        
+        if not self.detected_class_ids:
+            print("⚠️  No class IDs found in labels")
+            return
+        
+        print(f"\n{'='*80}")
+        print(f"🏷️  Define Custom Class Names")
+        print(f"{'='*80}\n")
+        print(f"Found {len(self.detected_class_ids)} class ID(s) in your labels:")
+        for class_id in sorted(self.detected_class_ids):
+            print(f"  • Class ID: {class_id}")
+        
+        print(f"\n💡 Enter a custom name for each class (or press Enter to use default)")
+        print(f"   Example: Fire, Smoke, Person\n")
+        
+        self.class_names = {}
+        for class_id in sorted(self.detected_class_ids):
+            default_name = f"class_{class_id}"
+            user_input = input(f"   Class {class_id} name [{default_name}]: ").strip()
+            self.class_names[class_id] = user_input if user_input else default_name
+        
+        print(f"\n✓ Class mapping configured:")
+        for class_id, class_name in sorted(self.class_names.items()):
+            print(f"   • ID {class_id} → {class_name}")
+        print()
         
     def select_folders(self):
         """Select image and label folders"""
@@ -117,6 +170,9 @@ class LabelStudioImporter:
                         box_width = max(0, min(box_width, image_width - x_left))
                         box_height = max(0, min(box_height, image_height - y_top))
                         
+                        # Get class name from loaded names, default to numeric string
+                        class_name = self.class_names.get(class_id, f"class_{class_id}")
+                        
                         tasks.append({
                             "value": {
                                 "x": (x_left / image_width) * 100,
@@ -124,7 +180,7 @@ class LabelStudioImporter:
                                 "width": (box_width / image_width) * 100,
                                 "height": (box_height / image_height) * 100,
                                 "rotation": 0,
-                                "rectanglelabels": [str(class_id)]
+                                "rectanglelabels": [str(class_name)]
                             },
                             "from_name": "label",
                             "to_name": "image",
@@ -146,23 +202,134 @@ class LabelStudioImporter:
             return 640, 480
     
     def create_label_studio_config(self) -> str:
-        """Create Label Studio XML configuration"""
-        config = """<View>
+        """Create Label Studio XML configuration using actual class names"""
+        # Define colors for different classes
+        colors = ["green", "blue", "red", "yellow", "purple", "orange", "cyan", "magenta", "lime", "pink"]
+        
+        # Build Label elements with actual class names
+        labels_xml = ""
+        for class_id, class_name in sorted(self.class_names.items()):
+            color = colors[class_id % len(colors)]
+            labels_xml += f'    <Label value="{class_name}" background="{color}"/>\n'
+        
+        config = f"""<View>
   <Image name="image" value="$image"/>
   <RectangleLabels name="label" toName="image">
-    <Label value="0" background="green"/>
-    <Label value="1" background="blue"/>
-    <Label value="2" background="red"/>
-    <Label value="3" background="yellow"/>
-    <Label value="4" background="purple"/>
-    <Label value="5" background="orange"/>
-    <Label value="6" background="cyan"/>
-    <Label value="7" background="magenta"/>
-    <Label value="8" background="lime"/>
-    <Label value="9" background="pink"/>
-  </RectangleLabels>
+{labels_xml}  </RectangleLabels>
 </View>"""
         return config
+    
+    def show_config_popup(self, config: str):
+        """Show XML configuration in a separate popup window for copy-paste"""
+        # Create hidden root window
+        root = tk.Tk()
+        root.withdraw()  # Hide the root window
+        
+        popup = tk.Toplevel(root)
+        popup.title("📋 Label Studio Configuration - Copy This!")
+        popup.geometry("900x600")
+        
+        # Header
+        header = tk.Label(popup, text="Copy this XML into Label Studio → Project Settings → Labeling Interface", 
+                         font=("Arial", 12, "bold"), fg="blue", bg="lightyellow", pady=10)
+        header.pack(fill=tk.X)
+        
+        # Instructions
+        instructions = tk.Label(popup, text="""
+Steps:
+1. Copy the XML below (Ctrl+A to select all, Ctrl+C to copy)
+2. Go to Label Studio → Project Settings → Labeling Interface
+3. Replace the default XML with this code
+4. Click 'Save'
+5. Import your tasks.json
+        """, justify=tk.LEFT, font=("Arial", 10))
+        instructions.pack(fill=tk.X, padx=10, pady=10)
+        
+        # Text area for config
+        text_frame = tk.Frame(popup)
+        text_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        scrollbar = tk.Scrollbar(text_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        text_widget = scrolledtext.ScrolledText(text_frame, height=20, width=100, 
+                                               yscrollcommand=scrollbar.set, font=("Courier", 10))
+        text_widget.pack(fill=tk.BOTH, expand=True)
+        scrollbar.config(command=text_widget.yview)
+        
+        text_widget.insert(tk.END, config)
+        text_widget.config(state=tk.DISABLED)  # Read-only
+        
+        # Copy button
+        def copy_to_clipboard():
+            popup.clipboard_clear()
+            popup.clipboard_append(config)
+            messagebox.showinfo("Success", "XML configuration copied to clipboard!\n\nNow paste it into Label Studio.")
+        
+        button_frame = tk.Frame(popup)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+        copy_btn = tk.Button(button_frame, text="📋 Copy to Clipboard", command=copy_to_clipboard, 
+                            bg="lightgreen", font=("Arial", 11), padx=20, pady=5)
+        copy_btn.pack(side=tk.LEFT, padx=5)
+        
+        close_btn = tk.Button(button_frame, text="Close", command=popup.destroy, 
+                             font=("Arial", 11), padx=20, pady=5)
+        close_btn.pack(side=tk.LEFT, padx=5)
+        
+        def on_popup_close():
+            popup.destroy()
+            root.destroy()
+        
+        popup.protocol("WM_DELETE_WINDOW", on_popup_close)
+        popup.wait_window()
+    
+    def start_image_server_background(self):
+        """Start the image server in a background thread"""
+        def run_server():
+            try:
+                import http.server
+                import socketserver
+                from urllib.parse import unquote
+                
+                PORT = 8000
+                IMAGES_DIR = self.project_dir / "images"
+                
+                class ImageHandler(http.server.SimpleHTTPRequestHandler):
+                    def do_GET(self):
+                        if self.path.startswith("/images/"):
+                            filename = unquote(self.path[8:])
+                            filepath = IMAGES_DIR / filename
+                            
+                            if filepath.exists() and filepath.is_file():
+                                try:
+                                    with open(filepath, 'rb') as f:
+                                        self.send_response(200)
+                                        self.send_header('Content-type', 'image/jpeg')
+                                        self.send_header('Content-Length', filepath.stat().st_size)
+                                        self.end_headers()
+                                        self.wfile.write(f.read())
+                                except Exception as e:
+                                    self.send_response(500)
+                                    self.end_headers()
+                            else:
+                                self.send_response(404)
+                                self.end_headers()
+                        else:
+                            self.send_response(404)
+                            self.end_headers()
+                
+                with socketserver.TCPServer(("", PORT), ImageHandler) as httpd:
+                    print(f"\n✅ Image server started on http://localhost:{PORT}")
+                    print(f"📁 Serving images from: {IMAGES_DIR}")
+                    print(f"⚠️  Keep this window open while using Label Studio!\n")
+                    httpd.serve_forever()
+            except Exception as e:
+                print(f"❌ Error starting image server: {e}")
+        
+        # Start server in background thread
+        server_thread = threading.Thread(target=run_server, daemon=True)
+        server_thread.start()
     
     def create_label_studio_project(self) -> bool:
         """Create Label Studio project with auto-labeled data"""
@@ -237,58 +404,11 @@ class LabelStudioImporter:
             
             print(f"✓ Created label_config.xml\n")
             
-            # Create HTTP server script to serve images
-            server_script = f'''#!/usr/bin/env python3
-"""Simple HTTP server to serve images for Label Studio"""
-import http.server
-import socketserver
-import os
-from pathlib import Path
-from urllib.parse import unquote
-
-PORT = 8000
-IMAGES_DIR = Path(__file__).parent / "images"
-
-class ImageHandler(http.server.SimpleHTTPRequestHandler):
-    def do_GET(self):
-        if self.path.startswith("/images/"):
-            # Remove /images/ prefix and decode URL encoding
-            filename = unquote(self.path[8:])  # Remove "/images/" and decode
-            filepath = IMAGES_DIR / filename
+            # Show XML config in popup window
+            self.show_config_popup(config)
             
-            if filepath.exists() and filepath.is_file():
-                try:
-                    with open(filepath, 'rb') as f:
-                        self.send_response(200)
-                        # Detect content type
-                        if filename.lower().endswith('.png'):
-                            content_type = 'image/png'
-                        elif filename.lower().endswith('.gif'):
-                            content_type = 'image/gif'
-                        else:
-                            content_type = 'image/jpeg'
-                        self.send_header('Content-type', content_type)
-                        self.send_header('Access-Control-Allow-Origin', '*')
-                        self.end_headers()
-                        self.wfile.write(f.read())
-                    return
-                except Exception as e:
-                    print(f"Error serving {{filename}}: {{e}}")
-        
-        self.send_response(404)
-        self.end_headers()
-
-if __name__ == "__main__":
-    os.chdir(Path(__file__).parent)
-    with socketserver.TCPServer(("", PORT), ImageHandler) as httpd:
-        print(f"Serving images on http://localhost:{{PORT}}")
-        print(f"Images directory: {{IMAGES_DIR}}")
-        print(f"Press Ctrl+C to stop")
-        httpd.serve_forever()
-'''
-            server_file = self.project_dir / "serve_images.py"
-            with open(server_file, 'w', encoding='utf-8') as f:
-                f.write(server_script)
+            # Start image server in background
+            self.start_image_server_background()
             
             # Create README
             readme = f"""# Label Studio Project: {self.project_name}
@@ -297,60 +417,72 @@ if __name__ == "__main__":
 
 Label Studio on Windows needs an HTTP server to access images properly.
 
+## ⚠️ IMPORTANT: Label Configuration Setup
+
+Before importing your labels, you MUST set the labeling interface:
+
+1. Open Label Studio → Create New Project
+2. Go to Project Settings → Labeling Interface
+3. **Replace the default XML with the content from `label_config.xml` in this folder**
+4. Click "Save"
+5. Now import `tasks.json` and your labels will be recognized!
+
+The `label_config.xml` contains your label definitions with these classes:
+"""
+            # Add class names to README
+            for class_id, class_name in sorted(self.class_names.items()):
+                readme += f"- {class_name}\n"
+            
+            readme += f"""
 ### Quick Setup (3 steps):
 
-**Step 1: Start Image Server**
-```powershell
-cd {self.project_dir}
-python serve_images.py
-```
-You should see: `Serving images on http://localhost:8000`
+**Step 1: Get Label Configuration**
+- Copy the XML that appeared in the popup window
+- (Or open `label_config.xml` in this folder)
 
-**Step 2: Update tasks.json**
-Open `tasks.json` and replace image paths with:
-```json
-"image": "http://localhost:8000/images/filename.jpg"
-```
+**Step 2: Set Label Config in Label Studio**
+- Go to Label Studio → Create Project
+- Go to Settings → Labeling Interface
+- Paste the XML configuration
+- Click "Save"
 
-Or run this PowerShell command to auto-fix:
-```powershell
-(Get-Content tasks.json) -replace '"image": "[^"]*?"', '"image": "http://localhost:8000/images/$([System.IO.Path]::GetFileName(''$1''))"' | Set-Content tasks.json
-```
-
-**Step 3: Start Label Studio (in a NEW terminal)**
+**Step 3: Start Label Studio**
 ```powershell
 .venv\\Scripts\\activate.ps1
 label-studio
 ```
 
-### How to Use
+✅ **Image server is already running automatically!**
 
+Then:
 1. Open Label Studio at `http://localhost:8080`
-2. Create new project or open existing
-3. Import `tasks.json` from this directory
-4. Review and edit labels
-5. Export when done
+2. Import `tasks.json` from this directory
+3. Review and edit labels
+4. Export when done
 
 ## Project Details
 
 - Images: {len(image_files)} images
 - Tasks: {len(tasks)} tasks
-- Classes: 0-9
+- Classes: {", ".join(self.class_names.values())}
 - Format: YOLO with auto-generated labels
-- Image Server: `serve_images.py` (serves on localhost:8000)
+- Image Server: Running on localhost:8000 (automatic)
 
 ## Files in This Project
 
 - `tasks.json` - Task definitions with image references
-- `label_config.xml` - Annotation schema for Label Studio
-- `serve_images.py` - HTTP server to serve images
+- `label_config.xml` - **COPY THIS INTO LABEL STUDIO SETTINGS** ← Important!
 - `images/` - Folder containing all images
 - `README.md` - This file
 
 ## Troubleshooting
 
+**"Labeling box has no label" error in Label Studio?**
+- You didn't set the label configuration!
+- Copy `label_config.xml` into Project Settings → Labeling Interface
+
 **Images won't load?**
-- Make sure `serve_images.py` is running
+- Make sure the image server is still running (the window should show "Image server started on http://localhost:8000")
 - Check that `tasks.json` has correct URLs: `http://localhost:8000/images/...`
 - Check browser console for errors (F12)
 
@@ -358,16 +490,18 @@ label-studio
 - Make sure you're in the virtual environment: `.venv\\Scripts\\activate.ps1`
 
 **Port already in use?**
-- Edit `serve_images.py` and change `PORT = 8000` to another number (8001, 8002, etc.)
+- Another application is using port 8000
+- Check if port 8000 is already in use and close that application
 
 ## Workflow
 
-1. Review labels in Label Studio
-2. Make corrections (move, resize, delete boxes)
-3. Add missing boxes
-4. Click Submit when done
-5. Export annotations
-6. Use for training
+1. Set label configuration (label_config.xml)
+2. Review labels in Label Studio
+3. Make corrections (move, resize, delete boxes)
+4. Add missing boxes
+5. Click Submit when done
+6. Export annotations
+7. Use for training
 
 """
             readme_file = self.project_dir / "README.md"
@@ -375,16 +509,23 @@ label-studio
                 f.write(readme)
             
             print(f"✓ Created README.md")
-            print(f"✓ Created serve_images.py\n")
+            print(f"✓ Image server running on http://localhost:8000\n")
             print(f"{'='*80}")
             print(f"✅ Label Studio project created successfully!")
             print(f"{'='*80}\n")
             print(f"Project location: {self.project_dir}\n")
-            print(f"Next steps:")
-            print(f"1. Start Label Studio: label-studio")
-            print(f"2. Open project directory: {self.project_dir}")
-            print(f"3. Review and adjust labels")
-            print(f"4. Export annotations\n")
+            print(f"📋 Class labels that will be used:")
+            for class_id, class_name in sorted(self.class_names.items()):
+                print(f"   • {class_name}")
+            print(f"\n🚀 Next steps:")
+            print(f"1. Copy the XML configuration from the popup window (or from label_config.xml)")
+            print(f"2. Open Label Studio → Create Project")
+            print(f"3. Go to Project Settings → Labeling Interface")
+            print(f"4. Paste the XML configuration and click 'Save'")
+            print(f"5. Import tasks.json from: {self.project_dir}")
+            print(f"6. Image server is running on http://localhost:8000")
+            print(f"7. Review and adjust labels")
+            print(f"8. Export annotations\n")
             
             return True
             
@@ -560,18 +701,21 @@ Files:
         print(f"✓ Image folder: {self.image_folder}")
         print(f"✓ Label folder: {self.label_folder}\n")
         
-        # Step 2: Get project name
+        # Step 2: Prompt user to define class names
+        self.prompt_class_names()
+        
+        # Step 3: Get project name
         if not self.get_project_name():
             print("❌ Operation cancelled")
             return
         
         print(f"✓ Project name: {self.project_name}\n")
         
-        # Step 3: Create project
+        # Step 4: Create project
         if not self.create_label_studio_project():
             return
         
-        # Step 4: Show guide (print only, no popup window)
+        # Step 5: Show guide (print only, no popup window)
         guide = self.launch_label_studio_guide()
         print(guide)
 
