@@ -213,7 +213,9 @@ class LabelStudioImporter:
                     task["annotations"] = [{
                         "id": annotation_id,  # Unique annotation ID
                         "completed_by": 1,
-                        "result": annotations
+                        "result": annotations,
+                        "was_cancelled": False,
+                        "ground_truth": True
                     }]
                     annotation_id += 1  # Increment for next annotation
                 
