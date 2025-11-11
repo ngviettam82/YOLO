@@ -101,9 +101,26 @@ if errorlevel 1 (
 echo PyTorch installed successfully.
 echo.
 
+REM Create dataset folder structure
+echo ========================================
+echo Step 3/4: Creating dataset folder structure...
+echo ========================================
+if not exist "dataset" mkdir dataset
+if not exist "dataset\images" mkdir dataset\images
+if not exist "dataset\images\train" mkdir dataset\images\train
+if not exist "dataset\images\val" mkdir dataset\images\val
+if not exist "dataset\images\test" mkdir dataset\images\test
+if not exist "dataset\labels" mkdir dataset\labels
+if not exist "dataset\labels\train" mkdir dataset\labels\train
+if not exist "dataset\labels\val" mkdir dataset\labels\val
+if not exist "dataset\labels\test" mkdir dataset\labels\test
+if not exist "raw_dataset" mkdir raw_dataset
+echo Folder structure created.
+echo.
+
 REM Install requirements
 echo ========================================
-echo Step 3/4: Installing YOLO and dependencies...
+echo Step 4/4: Installing YOLO and dependencies...
 echo This may take 3-5 minutes...
 echo ========================================
 pip install -r requirements.txt
@@ -117,7 +134,7 @@ echo.
 
 REM Verify installation
 echo ========================================
-echo Step 4/4: Verifying installation...
+echo Step 5/5: Verifying installation...
 echo ========================================
 python scripts\check_setup.py
 echo.
@@ -128,9 +145,10 @@ echo Installation Complete!
 echo ========================================
 echo.
 echo Next steps:
-echo 1. Prepare your dataset: Double-click quickstart_dataset.bat
-echo 2. Label images: Double-click quickstart_label.bat
-echo 3. Train model: Double-click quickstart_train.bat
+echo 1. Place your dataset images in: raw_dataset/
+echo 2. Prepare your dataset: Double-click 2.dataset.bat
+echo 3. Label images: Double-click 3.label.bat
+echo 4. Train model: Double-click 4.train.bat
 echo.
 echo For detailed instructions, read:
 echo - docs/INSTALLATION.md
