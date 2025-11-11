@@ -51,16 +51,14 @@ class YOLOTrainer:
         print(f"{'='*80}\n")
         
         print("Choose model source:")
-        print("  1. Use default pretrained model (yolo11m.pt)")
+        print("  1. Use pretrained model (download if needed)")
         print("  2. Use already trained model (select file)")
         
         while True:
             choice = input("\nEnter your choice (1 or 2): ").strip()
             
             if choice == '1':
-                self.model_path = self.config.get('model', 'yolo11m.pt')
-                print(f"✓ Selected default model: {self.model_path}\n")
-                return self.model_path
+                return self.select_pretrained_model()
             
             elif choice == '2':
                 # Open file dialog
@@ -90,6 +88,64 @@ class YOLOTrainer:
             
             else:
                 print("❌ Invalid choice. Please enter 1 or 2.\n")
+                continue
+    
+    def select_pretrained_model(self):
+        """Select from available YOLO pretrained models"""
+        # Available YOLO11 models
+        pretrained_models = {
+            '1': ('yolo11n.pt', 'Nano - Fastest, smallest'),
+            '2': ('yolo11s.pt', 'Small - Fast, lightweight'),
+            '3': ('yolo11m.pt', 'Medium - Balanced (RECOMMENDED)'),
+            '4': ('yolo11l.pt', 'Large - More accurate'),
+            '5': ('yolo11x.pt', 'Extra Large - Most accurate'),
+        }
+        
+        print("\nAvailable YOLO11 Pretrained Models:")
+        print("(Will download automatically if not on machine)\n")
+        
+        for key, (model_name, description) in pretrained_models.items():
+            print(f"  {key}. {model_name:20} - {description}")
+        
+        print(f"  6. Download all models")
+        
+        while True:
+            choice = input("\nSelect model (1-6): ").strip()
+            
+            if choice in pretrained_models:
+                model_name, description = pretrained_models[choice]
+                self.model_path = model_name
+                print(f"\n✓ Selected: {model_name} ({description})")
+                print(f"⏳ Model will be downloaded automatically if not on machine...\n")
+                return model_name
+            
+            elif choice == '6':
+                print("\n⏳ Downloading all YOLO11 models...")
+                for key, (model_name, description) in pretrained_models.items():
+                    print(f"   Downloading {model_name}...")
+                    try:
+                        YOLO(model_name)
+                        print(f"   ✓ {model_name} ready")
+                    except Exception as e:
+                        print(f"   ❌ Failed to download {model_name}: {e}")
+                
+                # Ask which one to use
+                print("\nAll models downloaded. Select one to use for training:")
+                for key, (model_name, description) in pretrained_models.items():
+                    print(f"  {key}. {model_name:20} - {description}")
+                
+                choice = input("\nSelect model (1-5): ").strip()
+                if choice in pretrained_models:
+                    model_name, description = pretrained_models[choice]
+                    self.model_path = model_name
+                    print(f"\n✓ Selected: {model_name} ({description})\n")
+                    return model_name
+                else:
+                    print("❌ Invalid choice. Please try again.\n")
+                    continue
+            
+            else:
+                print("❌ Invalid choice. Please enter 1-6.\n")
                 continue
         
     def _setup_device(self):
