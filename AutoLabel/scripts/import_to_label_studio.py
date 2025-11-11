@@ -378,59 +378,6 @@ Steps:
             # Start image server in background
             self.start_image_server_background()
             
-            # Create HTTP server script to serve images
-            server_script = f'''#!/usr/bin/env python3
-"""Simple HTTP server to serve images for Label Studio"""
-import http.server
-import socketserver
-import os
-from pathlib import Path
-from urllib.parse import unquote
-
-PORT = 8000
-IMAGES_DIR = Path(__file__).parent / "images"
-
-class ImageHandler(http.server.SimpleHTTPRequestHandler):
-    def do_GET(self):
-        if self.path.startswith("/images/"):
-            # Remove /images/ prefix and decode URL encoding
-            filename = unquote(self.path[8:])  # Remove "/images/" and decode
-            filepath = IMAGES_DIR / filename
-            
-            if filepath.exists() and filepath.is_file():
-                try:
-                    with open(filepath, 'rb') as f:
-                        self.send_response(200)
-                        # Detect content type
-                        if filename.lower().endswith('.png'):
-                            content_type = 'image/png'
-                        elif filename.lower().endswith('.gif'):
-                            content_type = 'image/gif'
-                        else:
-                            content_type = 'image/jpeg'
-                        self.send_header('Content-type', content_type)
-                        self.send_header('Access-Control-Allow-Origin', '*')
-                        self.end_headers()
-                        self.wfile.write(f.read())
-                    return
-                except Exception as e:
-                    print(f"Error serving {{filename}}: {{e}}")
-        
-        self.send_response(404)
-        self.end_headers()
-
-if __name__ == "__main__":
-    os.chdir(Path(__file__).parent)
-    with socketserver.TCPServer(("", PORT), ImageHandler) as httpd:
-        print(f"Serving images on http://localhost:{{PORT}}")
-        print(f"Images directory: {{IMAGES_DIR}}")
-        print(f"Press Ctrl+C to stop")
-        httpd.serve_forever()
-'''
-            server_file = self.project_dir / "serve_images.py"
-            with open(server_file, 'w', encoding='utf-8') as f:
-                f.write(server_script)
-            
             # Create README
             readme = f"""# Label Studio Project: {self.project_name}
 
@@ -455,30 +402,25 @@ The `label_config.xml` contains your label definitions with these classes:
                 readme += f"- {class_name}\n"
             
             readme += f"""
-### Quick Setup (4 steps):
+### Quick Setup (3 steps):
 
 **Step 1: Get Label Configuration**
-- Open `label_config.xml` in this folder (it's ready to copy!)
-- Copy all the XML content
+- Copy the XML that appeared in the popup window
+- (Or open `label_config.xml` in this folder)
 
 **Step 2: Set Label Config in Label Studio**
 - Go to Label Studio → Create Project
 - Go to Settings → Labeling Interface
-- Paste the XML from `label_config.xml`
+- Paste the XML configuration
 - Click "Save"
 
-**Step 3: Start Image Server**
-```powershell
-cd {self.project_dir}
-python serve_images.py
-```
-You should see: `Serving images on http://localhost:8000`
-
-**Step 4: Start Label Studio (in a NEW terminal)**
+**Step 3: Start Label Studio**
 ```powershell
 .venv\\Scripts\\activate.ps1
 label-studio
 ```
+
+✅ **Image server is already running automatically!**
 
 Then:
 1. Open Label Studio at `http://localhost:8080`
@@ -492,13 +434,12 @@ Then:
 - Tasks: {len(tasks)} tasks
 - Classes: {", ".join(self.class_names.values())}
 - Format: YOLO with auto-generated labels
-- Image Server: `serve_images.py` (serves on localhost:8000)
+- Image Server: Running on localhost:8000 (automatic)
 
 ## Files in This Project
 
 - `tasks.json` - Task definitions with image references
 - `label_config.xml` - **COPY THIS INTO LABEL STUDIO SETTINGS** ← Important!
-- `serve_images.py` - HTTP server to serve images
 - `images/` - Folder containing all images
 - `README.md` - This file
 
@@ -509,7 +450,7 @@ Then:
 - Copy `label_config.xml` into Project Settings → Labeling Interface
 
 **Images won't load?**
-- Make sure `serve_images.py` is running
+- Make sure the image server is still running (the window should show "Image server started on http://localhost:8000")
 - Check that `tasks.json` has correct URLs: `http://localhost:8000/images/...`
 - Check browser console for errors (F12)
 
@@ -517,7 +458,8 @@ Then:
 - Make sure you're in the virtual environment: `.venv\\Scripts\\activate.ps1`
 
 **Port already in use?**
-- Edit `serve_images.py` and change `PORT = 8000` to another number (8001, 8002, etc.)
+- Another application is using port 8000
+- Check if port 8000 is already in use and close that application
 
 ## Workflow
 
@@ -535,28 +477,23 @@ Then:
                 f.write(readme)
             
             print(f"✓ Created README.md")
-            print(f"✓ Created serve_images.py\n")
+            print(f"✓ Image server running on http://localhost:8000\n")
             print(f"{'='*80}")
             print(f"✅ Label Studio project created successfully!")
             print(f"{'='*80}\n")
             print(f"Project location: {self.project_dir}\n")
-            print(f"⚠️  IMPORTANT - Before importing labels into Label Studio:\n")
-            print(f"1. Open the file: {self.project_dir}/label_config.xml")
-            print(f"2. Copy all the XML content")
-            print(f"3. In Label Studio → Project Settings → Labeling Interface")
-            print(f"4. Replace the default XML with your copied content")
-            print(f"5. Click 'Save'")
-            print(f"6. NOW you can import tasks.json\n")
             print(f"📋 Class labels that will be used:")
             for class_id, class_name in sorted(self.class_names.items()):
                 print(f"   • {class_name}")
             print(f"\n🚀 Next steps:")
-            print(f"1. Set label configuration (see instructions above)")
-            print(f"2. Start image server: python {self.project_dir}/serve_images.py")
-            print(f"3. Start Label Studio: label-studio")
-            print(f"4. Import tasks.json from: {self.project_dir}")
-            print(f"5. Review and adjust labels")
-            print(f"6. Export annotations\n")
+            print(f"1. Copy the XML configuration from the popup window (or from label_config.xml)")
+            print(f"2. Open Label Studio → Create Project")
+            print(f"3. Go to Project Settings → Labeling Interface")
+            print(f"4. Paste the XML configuration and click 'Save'")
+            print(f"5. Import tasks.json from: {self.project_dir}")
+            print(f"6. Image server is running on http://localhost:8000")
+            print(f"7. Review and adjust labels")
+            print(f"8. Export annotations\n")
             
             return True
             
