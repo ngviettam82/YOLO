@@ -22,6 +22,8 @@ import torch
 import time
 import yaml
 import platform
+import tkinter as tk
+from tkinter import filedialog, messagebox
 from pathlib import Path
 from ultralytics import YOLO
 from datetime import datetime
@@ -40,6 +42,55 @@ class YOLOTrainer:
         self.models_dir = PROJECT_ROOT / "models"
         self.device = self._setup_device()
         self.config = self._load_config()
+        self.model_path = None  # Will be set by select_model()
+    
+    def select_model(self):
+        """Prompt user to select model source"""
+        print(f"\n{'='*80}")
+        print(f"🏷️  Model Selection")
+        print(f"{'='*80}\n")
+        
+        print("Choose model source:")
+        print("  1. Use default pretrained model (yolo11m.pt)")
+        print("  2. Use already trained model (select file)")
+        
+        while True:
+            choice = input("\nEnter your choice (1 or 2): ").strip()
+            
+            if choice == '1':
+                self.model_path = self.config.get('model', 'yolo11m.pt')
+                print(f"✓ Selected default model: {self.model_path}\n")
+                return self.model_path
+            
+            elif choice == '2':
+                # Open file dialog
+                root = tk.Tk()
+                root.withdraw()
+                
+                # Initial directory
+                initial_dir = str(self.project_dir)
+                if not Path(initial_dir).exists():
+                    initial_dir = str(self.models_dir)
+                
+                file_path = filedialog.askopenfilename(
+                    title="Select Trained Model File",
+                    initialdir=initial_dir,
+                    filetypes=[("PyTorch Models", "*.pt"), ("All Files", "*.*")]
+                )
+                
+                root.destroy()
+                
+                if file_path:
+                    self.model_path = file_path
+                    print(f"✓ Selected trained model: {self.model_path}\n")
+                    return self.model_path
+                else:
+                    print("❌ No file selected. Please try again.\n")
+                    continue
+            
+            else:
+                print("❌ Invalid choice. Please enter 1 or 2.\n")
+                continue
         
     def _setup_device(self):
         """Setup and optimize CUDA device"""
@@ -201,18 +252,22 @@ class YOLOTrainer:
         # Check for checkpoint
         checkpoint = self.find_checkpoint() if resume else None
         
-        # Load model
-        model_path = self.models_dir / self.config.get('model', 'yolo11m.pt')
+        # Load model - use selected model if available
+        if self.model_path:
+            model_to_load = self.model_path
+        else:
+            model_to_load = self.models_dir / self.config.get('model', 'yolo11m.pt')
+        
         if checkpoint:
             print(f"\n🔄 Resuming from checkpoint: {checkpoint}")
             model = YOLO(checkpoint)
         else:
-            print(f"\n🆕 Starting fresh training with: {model_path}")
-            if not model_path.exists():
-                print(f"⚠️  Model not found locally. Downloading: {self.config.get('model')}")
-                model = YOLO(self.config.get('model'))
+            print(f"\n🆕 Starting fresh training with: {model_to_load}")
+            if not Path(model_to_load).exists():
+                print(f"⚠️  Model not found locally. Downloading: {model_to_load}")
+                model = YOLO(str(model_to_load))
             else:
-                model = YOLO(str(model_path))
+                model = YOLO(str(model_to_load))
         
         # Calculate optimal batch size
         if self.device == 'cuda':
@@ -386,6 +441,8 @@ def main():
                        help='Path to dataset YAML file')
     parser.add_argument('--config', type=str, default=None,
                        help='Path to training config YAML')
+    parser.add_argument('--model', type=str, default=None,
+                       help='Path to model file (use default if not specified)')
     parser.add_argument('--resume', action='store_true',
                        help='Resume from last checkpoint')
     parser.add_argument('--no-resume', dest='resume', action='store_false',
@@ -396,6 +453,12 @@ def main():
     
     # Create trainer
     trainer = YOLOTrainer(config_path=args.config)
+    
+    # Select model if not provided via command line
+    if args.model:
+        trainer.model_path = args.model
+    else:
+        trainer.select_model()
     
     # Start training
     trainer.train(dataset_yaml=args.data, resume=args.resume)
