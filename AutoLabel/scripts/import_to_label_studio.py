@@ -27,26 +27,58 @@ class LabelStudioImporter:
         self.label_folder = None
         self.project_name = None
         self.project_dir = None
-        self.class_names = {}  # Load from data.yaml
-        self.load_class_names()
+        self.class_names = {}  # Maps class_id to user-defined name
+        self.detected_class_ids = set()  # Actual IDs found in labels
         
-    def load_class_names(self):
-        """Load class names from dataset config"""
-        data_yaml = Path(PROJECT_ROOT) / "dataset" / "data.yaml"
-        if data_yaml.exists():
-            try:
-                with open(data_yaml, 'r') as f:
-                    data = yaml.safe_load(f)
-                    if data and 'names' in data:
-                        self.class_names = data['names']
-                        print(f"📋 Loaded {len(self.class_names)} class names from data.yaml")
-            except Exception as e:
-                print(f"⚠️  Could not load class names from data.yaml: {e}")
-                # Use default numeric class names
-                self.class_names = {i: f"class_{i}" for i in range(10)}
-        else:
-            # Use default numeric class names
-            self.class_names = {i: f"class_{i}" for i in range(10)}
+    def detect_class_ids_from_labels(self):
+        """Detect all class IDs present in label files"""
+        self.detected_class_ids = set()
+        
+        if not self.label_folder:
+            return
+        
+        try:
+            for label_file in self.label_folder.glob('*.txt'):
+                if label_file.stat().st_size == 0:
+                    continue
+                    
+                with open(label_file, 'r') as f:
+                    for line in f:
+                        parts = line.strip().split()
+                        if len(parts) >= 5:
+                            class_id = int(parts[0])
+                            self.detected_class_ids.add(class_id)
+        except Exception as e:
+            print(f"⚠️  Error detecting class IDs: {e}")
+    
+    def prompt_class_names(self):
+        """Prompt user to define custom names for detected class IDs"""
+        self.detect_class_ids_from_labels()
+        
+        if not self.detected_class_ids:
+            print("⚠️  No class IDs found in labels")
+            return
+        
+        print(f"\n{'='*80}")
+        print(f"🏷️  Define Custom Class Names")
+        print(f"{'='*80}\n")
+        print(f"Found {len(self.detected_class_ids)} class ID(s) in your labels:")
+        for class_id in sorted(self.detected_class_ids):
+            print(f"  • Class ID: {class_id}")
+        
+        print(f"\n💡 Enter a custom name for each class (or press Enter to use default)")
+        print(f"   Example: Fire, Smoke, Person\n")
+        
+        self.class_names = {}
+        for class_id in sorted(self.detected_class_ids):
+            default_name = f"class_{class_id}"
+            user_input = input(f"   Class {class_id} name [{default_name}]: ").strip()
+            self.class_names[class_id] = user_input if user_input else default_name
+        
+        print(f"\n✓ Class mapping configured:")
+        for class_id, class_name in sorted(self.class_names.items()):
+            print(f"   • ID {class_id} → {class_name}")
+        print()
         
     def select_folders(self):
         """Select image and label folders"""
@@ -669,18 +701,21 @@ Files:
         print(f"✓ Image folder: {self.image_folder}")
         print(f"✓ Label folder: {self.label_folder}\n")
         
-        # Step 2: Get project name
+        # Step 2: Prompt user to define class names
+        self.prompt_class_names()
+        
+        # Step 3: Get project name
         if not self.get_project_name():
             print("❌ Operation cancelled")
             return
         
         print(f"✓ Project name: {self.project_name}\n")
         
-        # Step 3: Create project
+        # Step 4: Create project
         if not self.create_label_studio_project():
             return
         
-        # Step 4: Show guide (print only, no popup window)
+        # Step 5: Show guide (print only, no popup window)
         guide = self.launch_label_studio_guide()
         print(guide)
 
