@@ -1,8 +1,8 @@
-# YOLO Project - Quick Start Guide
+# Quick Start - Step-by-Step Guide
 
-## ⚡ Quickest Way to Get Started
+**Before you start:** Read `README.md` for project overview
 
-### Follow These 4 Steps in Order:
+## Follow These 4 Steps In Order
 
 Simply double-click these files **one after another**:
 
@@ -149,15 +149,30 @@ See `docs/TRAINING_GUIDE.md` for detailed options
 
 ## 📚 Detailed Documentation
 
-For detailed information, see:
+For more information on any topic:
 
-- **`docs/INSTALLATION.md`** - Detailed installation & troubleshooting
-- **`docs/DATASET_GUIDE.md`** - Dataset preparation guide  
-- **`docs/TRAINING_GUIDE.md`** - Training guide & tips
-- **`docs/QUICK_REFERENCE.md`** - All commands at a glance
-- **`docs/RTX5080_OPTIMIZED.md`** - GPU optimization details
-- **`PROJECT_STRUCTURE.md`** - File organization overview
-- **`README.md`** - Project overview
+- **`README.md`** - Project overview & features
+- **`docs/INSTALLATION.md`** - Installation troubleshooting
+- **`docs/DATASET_GUIDE.md`** - Dataset preparation details
+- **`docs/TRAINING_GUIDE.md`** - Training tips & advanced settings
+- **`docs/QUICK_REFERENCE.md`** - All commands reference
+- **`docs/RTX5080_OPTIMIZED.md`** - GPU optimization
+- **`docs/LABELING_TROUBLESHOOTING.md`** - Labeling tool help
+
+---
+
+## 💡 Optional: Auto-Label Images (Skip Step 3)
+
+Don't want to label manually? Use a pre-trained YOLO:
+
+```batch
+cd AutoLabel
+run_auto_label.bat
+```
+
+**See `AutoLabel/QUICKSTART.md` for details.**
+
+---
 
 ---
 
