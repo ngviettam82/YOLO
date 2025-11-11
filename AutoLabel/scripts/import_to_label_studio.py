@@ -189,7 +189,11 @@ class LabelStudioImporter:
     
     def show_config_popup(self, config: str):
         """Show XML configuration in a separate popup window for copy-paste"""
-        popup = tk.Toplevel()
+        # Create hidden root window
+        root = tk.Tk()
+        root.withdraw()  # Hide the root window
+        
+        popup = tk.Toplevel(root)
         popup.title("📋 Label Studio Configuration - Copy This!")
         popup.geometry("900x600")
         
@@ -241,6 +245,11 @@ Steps:
                              font=("Arial", 11), padx=20, pady=5)
         close_btn.pack(side=tk.LEFT, padx=5)
         
+        def on_popup_close():
+            popup.destroy()
+            root.destroy()
+        
+        popup.protocol("WM_DELETE_WINDOW", on_popup_close)
         popup.wait_window()
     
     def start_image_server_background(self):
