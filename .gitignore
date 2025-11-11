@@ -115,3 +115,5 @@ Thumbs.db
 .DS_Store
 .AppleDouble
 .LSOverride
+
+label_studio_*
