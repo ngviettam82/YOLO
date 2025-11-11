@@ -192,6 +192,9 @@ class LabelStudioImporter:
             
             # Create tasks JSON
             tasks = []
+            task_id = 1  # Start ID from 1
+            annotation_id = 1  # Start annotation ID from 1
+            
             for image_file in image_files:
                 label_file = self.label_folder / f"{image_file.stem}.txt"
                 img_width, img_height = self.get_image_dimensions(image_file)
@@ -200,6 +203,7 @@ class LabelStudioImporter:
                 
                 # Use HTTP URL pointing to image server (default: localhost:8000)
                 task = {
+                    "id": task_id,  # Unique task ID
                     "data": {
                         "image": f"http://localhost:8000/images/{image_file.name}"
                     }
@@ -207,12 +211,14 @@ class LabelStudioImporter:
                 
                 if annotations:
                     task["annotations"] = [{
-                        "id": 1,
+                        "id": annotation_id,  # Unique annotation ID
                         "completed_by": 1,
                         "result": annotations
                     }]
+                    annotation_id += 1  # Increment for next annotation
                 
                 tasks.append(task)
+                task_id += 1  # Increment for next task
             
             # Write tasks.json
             tasks_file = self.project_dir / "tasks.json"
