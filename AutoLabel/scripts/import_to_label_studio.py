@@ -187,6 +187,109 @@ class LabelStudioImporter:
 </View>"""
         return config
     
+    def show_config_popup(self, config: str):
+        """Show XML configuration in a separate popup window for copy-paste"""
+        popup = tk.Toplevel()
+        popup.title("📋 Label Studio Configuration - Copy This!")
+        popup.geometry("900x600")
+        
+        # Header
+        header = tk.Label(popup, text="Copy this XML into Label Studio → Project Settings → Labeling Interface", 
+                         font=("Arial", 12, "bold"), fg="blue", bg="lightyellow", pady=10)
+        header.pack(fill=tk.X)
+        
+        # Instructions
+        instructions = tk.Label(popup, text="""
+Steps:
+1. Copy the XML below (Ctrl+A to select all, Ctrl+C to copy)
+2. Go to Label Studio → Project Settings → Labeling Interface
+3. Replace the default XML with this code
+4. Click 'Save'
+5. Import your tasks.json
+        """, justify=tk.LEFT, font=("Arial", 10))
+        instructions.pack(fill=tk.X, padx=10, pady=10)
+        
+        # Text area for config
+        text_frame = tk.Frame(popup)
+        text_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        scrollbar = tk.Scrollbar(text_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        text_widget = scrolledtext.ScrolledText(text_frame, height=20, width=100, 
+                                               yscrollcommand=scrollbar.set, font=("Courier", 10))
+        text_widget.pack(fill=tk.BOTH, expand=True)
+        scrollbar.config(command=text_widget.yview)
+        
+        text_widget.insert(tk.END, config)
+        text_widget.config(state=tk.DISABLED)  # Read-only
+        
+        # Copy button
+        def copy_to_clipboard():
+            popup.clipboard_clear()
+            popup.clipboard_append(config)
+            messagebox.showinfo("Success", "XML configuration copied to clipboard!\n\nNow paste it into Label Studio.")
+        
+        button_frame = tk.Frame(popup)
+        button_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+        copy_btn = tk.Button(button_frame, text="📋 Copy to Clipboard", command=copy_to_clipboard, 
+                            bg="lightgreen", font=("Arial", 11), padx=20, pady=5)
+        copy_btn.pack(side=tk.LEFT, padx=5)
+        
+        close_btn = tk.Button(button_frame, text="Close", command=popup.destroy, 
+                             font=("Arial", 11), padx=20, pady=5)
+        close_btn.pack(side=tk.LEFT, padx=5)
+        
+        popup.wait_window()
+    
+    def start_image_server_background(self):
+        """Start the image server in a background thread"""
+        def run_server():
+            try:
+                import http.server
+                import socketserver
+                from urllib.parse import unquote
+                
+                PORT = 8000
+                IMAGES_DIR = self.project_dir / "images"
+                
+                class ImageHandler(http.server.SimpleHTTPRequestHandler):
+                    def do_GET(self):
+                        if self.path.startswith("/images/"):
+                            filename = unquote(self.path[8:])
+                            filepath = IMAGES_DIR / filename
+                            
+                            if filepath.exists() and filepath.is_file():
+                                try:
+                                    with open(filepath, 'rb') as f:
+                                        self.send_response(200)
+                                        self.send_header('Content-type', 'image/jpeg')
+                                        self.send_header('Content-Length', filepath.stat().st_size)
+                                        self.end_headers()
+                                        self.wfile.write(f.read())
+                                except Exception as e:
+                                    self.send_response(500)
+                                    self.end_headers()
+                            else:
+                                self.send_response(404)
+                                self.end_headers()
+                        else:
+                            self.send_response(404)
+                            self.end_headers()
+                
+                with socketserver.TCPServer(("", PORT), ImageHandler) as httpd:
+                    print(f"\n✅ Image server started on http://localhost:{PORT}")
+                    print(f"📁 Serving images from: {IMAGES_DIR}")
+                    print(f"⚠️  Keep this window open while using Label Studio!\n")
+                    httpd.serve_forever()
+            except Exception as e:
+                print(f"❌ Error starting image server: {e}")
+        
+        # Start server in background thread
+        server_thread = threading.Thread(target=run_server, daemon=True)
+        server_thread.start()
+    
     def create_label_studio_project(self) -> bool:
         """Create Label Studio project with auto-labeled data"""
         try:
@@ -259,11 +362,12 @@ class LabelStudioImporter:
                 f.write(config)
             
             print(f"✓ Created label_config.xml\n")
-            print(f"{'='*80}")
-            print(f"📋 LABEL STUDIO CONFIGURATION (Copy this to Label Studio)")
-            print(f"{'='*80}\n")
-            print(config)
-            print(f"\n{'='*80}\n")
+            
+            # Show XML config in popup window
+            self.show_config_popup(config)
+            
+            # Start image server in background
+            self.start_image_server_background()
             
             # Create HTTP server script to serve images
             server_script = f'''#!/usr/bin/env python3
