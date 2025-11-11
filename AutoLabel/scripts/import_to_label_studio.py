@@ -259,6 +259,11 @@ class LabelStudioImporter:
                 f.write(config)
             
             print(f"✓ Created label_config.xml\n")
+            print(f"{'='*80}")
+            print(f"📋 LABEL STUDIO CONFIGURATION (Copy this to Label Studio)")
+            print(f"{'='*80}\n")
+            print(config)
+            print(f"\n{'='*80}\n")
             
             # Create HTTP server script to serve images
             server_script = f'''#!/usr/bin/env python3
