@@ -320,57 +320,75 @@ if __name__ == "__main__":
 
 Label Studio on Windows needs an HTTP server to access images properly.
 
-### Quick Setup (3 steps):
+## ⚠️ IMPORTANT: Label Configuration Setup
 
-**Step 1: Start Image Server**
+Before importing your labels, you MUST set the labeling interface:
+
+1. Open Label Studio → Create New Project
+2. Go to Project Settings → Labeling Interface
+3. **Replace the default XML with the content from `label_config.xml` in this folder**
+4. Click "Save"
+5. Now import `tasks.json` and your labels will be recognized!
+
+The `label_config.xml` contains your label definitions with these classes:
+"""
+            # Add class names to README
+            for class_id, class_name in sorted(self.class_names.items()):
+                readme += f"- {class_name}\n"
+            
+            readme += f"""
+### Quick Setup (4 steps):
+
+**Step 1: Get Label Configuration**
+- Open `label_config.xml` in this folder (it's ready to copy!)
+- Copy all the XML content
+
+**Step 2: Set Label Config in Label Studio**
+- Go to Label Studio → Create Project
+- Go to Settings → Labeling Interface
+- Paste the XML from `label_config.xml`
+- Click "Save"
+
+**Step 3: Start Image Server**
 ```powershell
 cd {self.project_dir}
 python serve_images.py
 ```
 You should see: `Serving images on http://localhost:8000`
 
-**Step 2: Update tasks.json**
-Open `tasks.json` and replace image paths with:
-```json
-"image": "http://localhost:8000/images/filename.jpg"
-```
-
-Or run this PowerShell command to auto-fix:
-```powershell
-(Get-Content tasks.json) -replace '"image": "[^"]*?"', '"image": "http://localhost:8000/images/$([System.IO.Path]::GetFileName(''$1''))"' | Set-Content tasks.json
-```
-
-**Step 3: Start Label Studio (in a NEW terminal)**
+**Step 4: Start Label Studio (in a NEW terminal)**
 ```powershell
 .venv\\Scripts\\activate.ps1
 label-studio
 ```
 
-### How to Use
-
+Then:
 1. Open Label Studio at `http://localhost:8080`
-2. Create new project or open existing
-3. Import `tasks.json` from this directory
-4. Review and edit labels
-5. Export when done
+2. Import `tasks.json` from this directory
+3. Review and edit labels
+4. Export when done
 
 ## Project Details
 
 - Images: {len(image_files)} images
 - Tasks: {len(tasks)} tasks
-- Classes: 0-9
+- Classes: {", ".join(self.class_names.values())}
 - Format: YOLO with auto-generated labels
 - Image Server: `serve_images.py` (serves on localhost:8000)
 
 ## Files in This Project
 
 - `tasks.json` - Task definitions with image references
-- `label_config.xml` - Annotation schema for Label Studio
+- `label_config.xml` - **COPY THIS INTO LABEL STUDIO SETTINGS** ← Important!
 - `serve_images.py` - HTTP server to serve images
 - `images/` - Folder containing all images
 - `README.md` - This file
 
 ## Troubleshooting
+
+**"Labeling box has no label" error in Label Studio?**
+- You didn't set the label configuration!
+- Copy `label_config.xml` into Project Settings → Labeling Interface
 
 **Images won't load?**
 - Make sure `serve_images.py` is running
@@ -385,12 +403,13 @@ label-studio
 
 ## Workflow
 
-1. Review labels in Label Studio
-2. Make corrections (move, resize, delete boxes)
-3. Add missing boxes
-4. Click Submit when done
-5. Export annotations
-6. Use for training
+1. Set label configuration (label_config.xml)
+2. Review labels in Label Studio
+3. Make corrections (move, resize, delete boxes)
+4. Add missing boxes
+5. Click Submit when done
+6. Export annotations
+7. Use for training
 
 """
             readme_file = self.project_dir / "README.md"
@@ -403,11 +422,23 @@ label-studio
             print(f"✅ Label Studio project created successfully!")
             print(f"{'='*80}\n")
             print(f"Project location: {self.project_dir}\n")
-            print(f"Next steps:")
-            print(f"1. Start Label Studio: label-studio")
-            print(f"2. Open project directory: {self.project_dir}")
-            print(f"3. Review and adjust labels")
-            print(f"4. Export annotations\n")
+            print(f"⚠️  IMPORTANT - Before importing labels into Label Studio:\n")
+            print(f"1. Open the file: {self.project_dir}/label_config.xml")
+            print(f"2. Copy all the XML content")
+            print(f"3. In Label Studio → Project Settings → Labeling Interface")
+            print(f"4. Replace the default XML with your copied content")
+            print(f"5. Click 'Save'")
+            print(f"6. NOW you can import tasks.json\n")
+            print(f"📋 Class labels that will be used:")
+            for class_id, class_name in sorted(self.class_names.items()):
+                print(f"   • {class_name}")
+            print(f"\n🚀 Next steps:")
+            print(f"1. Set label configuration (see instructions above)")
+            print(f"2. Start image server: python {self.project_dir}/serve_images.py")
+            print(f"3. Start Label Studio: label-studio")
+            print(f"4. Import tasks.json from: {self.project_dir}")
+            print(f"5. Review and adjust labels")
+            print(f"6. Export annotations\n")
             
             return True
             
