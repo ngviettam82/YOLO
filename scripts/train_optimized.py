@@ -98,22 +98,48 @@ class SimpleYOLOTrainer:
         
         print("Choose training mode:")
         print("  1. Fresh start (start training from epoch 1)")
-        print("  2. Resume training (continue from last checkpoint)")
+        print("  2. Continue training (resume from checkpoint)")
         
         while True:
             choice = input("\nEnter your choice (1 or 2): ").strip()
             
             if choice == '1':
                 print(f"✓ Selected: Fresh start training\n")
-                return False  # resume=False
+                return False, None  # resume=False, no checkpoint needed
             
             elif choice == '2':
-                print(f"✓ Selected: Resume training\n")
-                return True  # resume=True
+                print(f"✓ Selected: Continue training\n")
+                # Ask user to select checkpoint file
+                checkpoint_path = self._select_checkpoint_file()
+                if checkpoint_path:
+                    return True, checkpoint_path  # resume=True, with checkpoint path
+                else:
+                    print("❌ No checkpoint selected. Please try again.\n")
+                    continue
             
             else:
                 print("❌ Invalid choice. Please enter 1 or 2.\n")
                 continue
+    
+    def _select_checkpoint_file(self):
+        """Prompt user to select a checkpoint file to resume from"""
+        print(f"Select checkpoint file to resume from...")
+        
+        root = tk.Tk()
+        root.withdraw()
+        
+        file_path = filedialog.askopenfilename(
+            title="Select Checkpoint File to Resume From",
+            filetypes=[("PyTorch Models", "*.pt"), ("All Files", "*.*")]
+        )
+        
+        root.destroy()
+        
+        if file_path:
+            print(f"✓ Selected checkpoint: {Path(file_path).name}\n")
+            return file_path
+        else:
+            return None
     
     def validate_dataset(self, dataset_yaml):
         """Validate dataset"""
@@ -159,12 +185,13 @@ class SimpleYOLOTrainer:
         
         return train_images, val_images
     
-    def train(self, dataset_yaml, resume=False):
+    def train(self, dataset_yaml, resume=False, checkpoint_path=None):
         """Train with stable configuration
         
         Args:
             dataset_yaml: Path to dataset YAML
             resume: Whether to resume training from checkpoint
+            checkpoint_path: Path to checkpoint file for resuming (if resume=True)
         """
         
         print(f"\n{'='*80}")
@@ -183,8 +210,11 @@ class SimpleYOLOTrainer:
         model = YOLO(self.model_path)
         
         # Determine training mode
-        if resume:
-            print(f"📌 Training mode: RESUME (continuing from last checkpoint)")
+        if resume and checkpoint_path:
+            print(f"📌 Training mode: RESUME (continuing from checkpoint)")
+            print(f"   Checkpoint: {Path(checkpoint_path).name}")
+            # Use checkpoint for resuming
+            model = YOLO(checkpoint_path)
         else:
             print(f"📌 Training mode: FRESH START (starting from epoch 1)")
         
@@ -196,9 +226,9 @@ class SimpleYOLOTrainer:
         # Stable training configuration (proven to work without NaN)
         train_args = {
             'data': str(dataset_yaml),
-            'epochs': 500,
+            'epochs': 5000,
             'imgsz': 832,
-            'batch': 16,  # Stable batch size
+            'batch': 24,  # Stable batch size
             'device': self.device,
             'workers': 12,
             'project': str(PROJECT_ROOT / 'runs'),
@@ -234,7 +264,7 @@ class SimpleYOLOTrainer:
             'close_mosaic': 15,
             'amp': True,
             'fraction': 0.95,
-            'patience': 50,
+            'patience': 200,
             
             # Validation and saving
             'val': True,
@@ -259,7 +289,7 @@ class SimpleYOLOTrainer:
         print(f"   Optimizer: AdamW")
         print(f"   Learning Rate: 0.01 → 0.001")
         print(f"   AMP (FP16): True")
-        print(f"   Early Stopping: 50 epochs")
+        print(f"   Early Stopping: 200 epochs")
         
         print(f"\n{'='*80}")
         print(f"🏋️  Starting training...")
@@ -341,14 +371,15 @@ def main():
     trainer.select_model()
     
     # Select training mode (unless --resume flag provided)
+    checkpoint_path = None
     if args.resume:
         resume = True
         print(f"📌 Training mode: RESUME (from command line flag)")
     else:
-        resume = trainer.select_training_mode()
+        resume, checkpoint_path = trainer.select_training_mode()
     
     # Start training
-    trainer.train(dataset_yaml=args.data, resume=resume)
+    trainer.train(dataset_yaml=args.data, resume=resume, checkpoint_path=checkpoint_path)
 
 
 if __name__ == "__main__":
