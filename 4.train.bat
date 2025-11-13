@@ -40,9 +40,8 @@ echo.
 
 REM Display training options
 echo [2/3] Training Configuration:
-echo   Model: Will be selected interactively
-echo     Option 1 - Pretrained: Fresh download, starts from scratch
-echo     Option 2 - Trained: Your saved model, can resume training
+echo   Model Selection: Pretrained (yolo11m) or Load from file
+echo   Training Mode: Fresh start or Resume from checkpoint
 echo   Epochs: 500 (optimized configuration)
 echo   Image Size: 832px (optimized configuration)
 echo   Batch Size: 16 (optimized for RTX 5080)
@@ -56,13 +55,10 @@ echo [3/3] Starting training...
 echo This will take several hours depending on your dataset size...
 echo.
 echo You will be prompted to select:
-echo   1. Pretrained Model - Fresh training from scratch
-echo   2. Trained Model - Load your saved .pt file and continue
+echo   1. Model Source: Pretrained (yolo11m) or Load file
+echo   2. Training Mode: Fresh start (epoch 1) or Resume checkpoint
 echo.
-echo Selection 1 ^(Pretrained^): Starts new training run
-echo Selection 2 ^(Trained^): Can resume previous training with --resume flag
-echo.
-echo Press Enter and follow the prompts...
+echo Follow the prompts to get started...
 echo.
 python scripts\train_optimized.py --data dataset/data.yaml --resume
 if errorlevel 1 (
