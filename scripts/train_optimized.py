@@ -48,14 +48,14 @@ class SimpleYOLOTrainer:
             return 'cpu'
     
     def select_model(self):
-        """Prompt user to select model source"""
+        """Prompt user to select model source and return (model_path, model_type)"""
         print(f"\n{'='*80}")
         print(f"🏷️  Model Selection")
         print(f"{'='*80}\n")
         
         print("Choose model source:")
-        print("  1. Use pretrained model (fresh download)")
-        print("  2. Use trained model (select file)")
+        print("  1. Use pretrained model (fresh download - start from scratch)")
+        print("  2. Use trained model (select file - continue training)")
         
         while True:
             choice = input("\nEnter your choice (1 or 2): ").strip()
@@ -64,7 +64,7 @@ class SimpleYOLOTrainer:
                 self.model_path = 'yolo11m.pt'
                 print(f"✓ Selected: yolo11m.pt (pretrained)")
                 print(f"⏳ Model will be downloaded automatically if not found...\n")
-                return self.model_path
+                return self.model_path, 'pretrained'
             
             elif choice == '2':
                 # Open file dialog
@@ -81,7 +81,7 @@ class SimpleYOLOTrainer:
                 if file_path:
                     self.model_path = file_path
                     print(f"✓ Selected trained model: {self.model_path}\n")
-                    return self.model_path
+                    return self.model_path, 'trained'
                 else:
                     print("❌ No file selected. Please try again.\n")
                     continue
@@ -134,8 +134,14 @@ class SimpleYOLOTrainer:
         
         return train_images, val_images
     
-    def train(self, dataset_yaml, resume=False):
-        """Train with stable configuration"""
+    def train(self, dataset_yaml, resume=False, model_type='pretrained'):
+        """Train with stable configuration
+        
+        Args:
+            dataset_yaml: Path to dataset YAML
+            resume: Whether to resume training (only for trained models)
+            model_type: 'pretrained' or 'trained'
+        """
         
         print(f"\n{'='*80}")
         print(f"🚀 YOLO11m FIRE DETECTION TRAINING")
@@ -151,6 +157,16 @@ class SimpleYOLOTrainer:
         
         print(f"\n🔄 Loading model: {self.model_path}")
         model = YOLO(self.model_path)
+        
+        # Determine resume behavior based on model type
+        # Pretrained models should always start fresh training
+        # Trained models can resume if requested
+        use_resume = False
+        if model_type == 'trained' and resume:
+            use_resume = True
+            print(f"📌 Resume mode: ENABLED (continuing from last checkpoint)")
+        else:
+            print(f"📌 Training mode: FRESH START (new training)")
         
         # GPU memory optimization
         if self.device == 'cuda':
@@ -210,7 +226,7 @@ class SimpleYOLOTrainer:
             
             # Multi-scale disabled for stability
             'rect': False,
-            'resume': resume,
+            'resume': use_resume,  # Use computed value instead of parameter
         }
         
         # Display configuration
@@ -294,18 +310,18 @@ def main():
     parser.add_argument('--data', type=str, default='dataset/data.yaml',
                        help='Path to dataset YAML file')
     parser.add_argument('--resume', action='store_true',
-                       help='Resume from last checkpoint')
+                       help='Resume from last checkpoint (only used with trained models)')
     
     args = parser.parse_args()
     
     # Create trainer
     trainer = SimpleYOLOTrainer()
     
-    # Select model
-    trainer.select_model()
+    # Select model and get model type
+    model_path, model_type = trainer.select_model()
     
-    # Start training
-    trainer.train(dataset_yaml=args.data, resume=args.resume)
+    # Start training with model type info
+    trainer.train(dataset_yaml=args.data, resume=args.resume, model_type=model_type)
 
 
 if __name__ == "__main__":
