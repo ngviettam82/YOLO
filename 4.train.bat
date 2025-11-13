@@ -40,7 +40,9 @@ echo.
 
 REM Display training options
 echo [2/3] Training Configuration:
-echo   Model: Will be selected interactively (pretrained or trained)
+echo   Model: Will be selected interactively
+echo     Option 1 - Pretrained: Fresh download, starts from scratch
+echo     Option 2 - Trained: Your saved model, can resume training
 echo   Epochs: 500 (optimized configuration)
 echo   Image Size: 832px (optimized configuration)
 echo   Batch Size: 16 (optimized for RTX 5080)
@@ -54,7 +56,11 @@ echo [3/3] Starting training...
 echo This will take several hours depending on your dataset size...
 echo.
 echo You will be prompted to select:
-echo   1. Model source: Pretrained (fresh) or Trained (file selection)
+echo   1. Pretrained Model - Fresh training from scratch
+echo   2. Trained Model - Load your saved .pt file and continue
+echo.
+echo Selection 1 ^(Pretrained^): Starts new training run
+echo Selection 2 ^(Trained^): Can resume previous training with --resume flag
 echo.
 echo Press Enter and follow the prompts...
 echo.
