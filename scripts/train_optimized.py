@@ -1,19 +1,11 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
-YOLO11 Maximum Performance & Accuracy Training Script
-Optimized for: NVIDIA GeForce RTX 5080 (16GB VRAM) - Blackwell Architecture
-System: Intel Ultra 7 265K (20 cores) + 64GB RAM
-Author: Optimized Training Configuration
-Date: November 2025
-
-This script provides the absolute maximum performance and accuracy for YOLO training.
+GPU-Optimized YOLO11m Fire Detection Training Script
+Simplified & Stable - Based on RTX 4070 Ti Super proven configuration
 Features:
-- Multi-scale training for better generalization
-- Advanced augmentation techniques
-- Learning rate optimization
-- Memory-efficient mixed precision training
-- Automatic resume from checkpoint
-- Progressive training strategies
+- Model selection: Pretrained (fresh) or Trained (file selection)
+- Simple, stable training configuration
+- Optimized for RTX 5080 (16GB VRAM)
 """
 
 import os
@@ -21,28 +13,39 @@ import sys
 import torch
 import time
 import yaml
-import platform
-import tkinter as tk
-from tkinter import filedialog, messagebox
 from pathlib import Path
 from ultralytics import YOLO
+import tkinter as tk
+from tkinter import filedialog, messagebox
 from datetime import datetime
 
 # Add project root to path
-PROJECT_ROOT = Path(__file__).parent
+PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.append(str(PROJECT_ROOT))
 
 
-class YOLOTrainer:
-    """Advanced YOLO Training Manager"""
+class SimpleYOLOTrainer:
+    """Simplified YOLO Trainer with model selection"""
     
-    def __init__(self, config_path=None):
-        self.config_path = config_path or PROJECT_ROOT / "configs" / "train_config.yaml"
-        self.project_dir = PROJECT_ROOT / "runs"
-        self.models_dir = PROJECT_ROOT / "models"
+    def __init__(self):
         self.device = self._setup_device()
-        self.config = self._load_config()
-        self.model_path = None  # Will be set by select_model()
+        self.model_path = None
+    
+    def _setup_device(self):
+        """Setup CUDA device"""
+        if torch.cuda.is_available():
+            device = 'cuda'
+            gpu_name = torch.cuda.get_device_name(0)
+            gpu_memory = torch.cuda.get_device_properties(0).total_memory / 1024**3
+            
+            print(f"🚀 GPU Detected: {gpu_name}")
+            print(f"💾 VRAM Available: {gpu_memory:.1f} GB")
+            print(f"⚡ CUDA Version: {torch.version.cuda}")
+            
+            return device
+        else:
+            print("⚠️  No GPU detected. Training will use CPU (significantly slower)")
+            return 'cpu'
     
     def select_model(self):
         """Prompt user to select model source"""
@@ -51,28 +54,25 @@ class YOLOTrainer:
         print(f"{'='*80}\n")
         
         print("Choose model source:")
-        print("  1. Use pretrained model (download if needed)")
-        print("  2. Use already trained model (select file)")
+        print("  1. Use pretrained model (fresh download)")
+        print("  2. Use trained model (select file)")
         
         while True:
             choice = input("\nEnter your choice (1 or 2): ").strip()
             
             if choice == '1':
-                return self.select_pretrained_model()
+                self.model_path = 'yolo11m.pt'
+                print(f"✓ Selected: yolo11m.pt (pretrained)")
+                print(f"⏳ Model will be downloaded automatically if not found...\n")
+                return self.model_path
             
             elif choice == '2':
                 # Open file dialog
                 root = tk.Tk()
                 root.withdraw()
                 
-                # Initial directory
-                initial_dir = str(self.project_dir)
-                if not Path(initial_dir).exists():
-                    initial_dir = str(self.models_dir)
-                
                 file_path = filedialog.askopenfilename(
                     title="Select Trained Model File",
-                    initialdir=initial_dir,
                     filetypes=[("PyTorch Models", "*.pt"), ("All Files", "*.*")]
                 )
                 
@@ -90,380 +90,141 @@ class YOLOTrainer:
                 print("❌ Invalid choice. Please enter 1 or 2.\n")
                 continue
     
-    def select_pretrained_model(self):
-        """Select from available YOLO pretrained models"""
-        # Available YOLO11 models
-        pretrained_models = {
-            '1': ('yolo11n.pt', 'Nano - Fastest, smallest'),
-            '2': ('yolo11s.pt', 'Small - Fast, lightweight'),
-            '3': ('yolo11m.pt', 'Medium - Balanced (RECOMMENDED)'),
-            '4': ('yolo11l.pt', 'Large - More accurate'),
-            '5': ('yolo11x.pt', 'Extra Large - Most accurate'),
-        }
-        
-        print("\nAvailable YOLO11 Pretrained Models:")
-        print("(Will download automatically if not on machine)\n")
-        
-        for key, (model_name, description) in pretrained_models.items():
-            print(f"  {key}. {model_name:20} - {description}")
-        
-        print(f"  6. Download all models")
-        
-        while True:
-            choice = input("\nSelect model (1-6): ").strip()
-            
-            if choice in pretrained_models:
-                model_name, description = pretrained_models[choice]
-                self.model_path = model_name
-                print(f"\n✓ Selected: {model_name} ({description})")
-                print(f"⏳ Model will be downloaded automatically if not on machine...\n")
-                return model_name
-            
-            elif choice == '6':
-                print("\n⏳ Downloading all YOLO11 models...")
-                for key, (model_name, description) in pretrained_models.items():
-                    print(f"   Downloading {model_name}...")
-                    try:
-                        YOLO(model_name)
-                        print(f"   ✓ {model_name} ready")
-                    except Exception as e:
-                        print(f"   ❌ Failed to download {model_name}: {e}")
-                
-                # Ask which one to use
-                print("\nAll models downloaded. Select one to use for training:")
-                for key, (model_name, description) in pretrained_models.items():
-                    print(f"  {key}. {model_name:20} - {description}")
-                
-                choice = input("\nSelect model (1-5): ").strip()
-                if choice in pretrained_models:
-                    model_name, description = pretrained_models[choice]
-                    self.model_path = model_name
-                    print(f"\n✓ Selected: {model_name} ({description})\n")
-                    return model_name
-                else:
-                    print("❌ Invalid choice. Please try again.\n")
-                    continue
-            
-            else:
-                print("❌ Invalid choice. Please enter 1-6.\n")
-                continue
-        
-    def _setup_device(self):
-        """Setup and optimize CUDA device"""
-        if torch.cuda.is_available():
-            device = 'cuda'
-            torch.backends.cudnn.benchmark = True  # Enable cudnn autotuner
-            torch.backends.cuda.matmul.allow_tf32 = True  # Enable TF32 for Ampere GPUs
-            torch.backends.cudnn.allow_tf32 = True
-            
-            gpu_name = torch.cuda.get_device_name(0)
-            gpu_memory = torch.cuda.get_device_properties(0).total_memory / 1024**3
-            
-            print(f"🚀 GPU Detected: {gpu_name}")
-            print(f"💾 VRAM Available: {gpu_memory:.1f} GB")
-            print(f"⚡ CUDA Version: {torch.version.cuda}")
-            print(f"🔥 cuDNN Enabled: {torch.backends.cudnn.enabled}")
-            print(f"🎯 TF32 Enabled: {torch.backends.cuda.matmul.allow_tf32}")
-            
-            return device
-        else:
-            print("⚠️  No GPU detected. Training will use CPU (significantly slower)")
-            return 'cpu'
-    
-    def _load_config(self):
-        """Load training configuration"""
-        if self.config_path.exists():
-            with open(self.config_path, 'r') as f:
-                config = yaml.safe_load(f)
-            print(f"✅ Loaded config from: {self.config_path}")
-            return config
-        else:
-            print(f"⚠️  Config file not found. Using default configuration.")
-            return self._default_config()
-    
-    def _default_config(self):
-        """Default high-performance configuration"""
-        # Detect RTX 5080/5090 for optimized settings
-        if self.device == 'cuda':
-            gpu_name = torch.cuda.get_device_name(0)
-            if '5080' in gpu_name:
-                batch_size = 40  # RTX 5080 optimized
-                workers = 12      # Intel Ultra 7 265K has 20 cores
-            elif '5090' in gpu_name:
-                batch_size = 80
-                workers = 16
-            else:
-                batch_size = 32
-                workers = 8
-        else:
-            batch_size = 4
-            workers = 4
-            
-        return {
-            'model': 'yolo11m.pt',  # Medium model - good balance
-            'image_size': 832,       # High resolution for accuracy
-            'batch_size': batch_size,
-            'epochs': 500,
-            'workers': workers,
-            'patience': 100,         # Early stopping patience
-        }
-    
-    def get_optimal_batch_size(self, vram_gb=16):
-        """Calculate optimal batch size based on VRAM"""
-        if self.device == 'cpu':
-            return 2
-        
-        img_size = self.config.get('image_size', 832)
-        
-        # Heuristic based on image size and VRAM
-        # RTX 5080 Blackwell architecture is 20% more efficient
-        gpu_name = torch.cuda.get_device_name(0) if self.device == 'cuda' else ''
-        multiplier = 1.2 if '5080' in gpu_name or '5090' in gpu_name else 1.0
-        
-        if img_size <= 640:
-            batch_sizes = {8: int(16*multiplier), 12: int(24*multiplier), 16: int(40*multiplier), 24: int(64*multiplier), 32: int(96*multiplier)}
-        elif img_size <= 832:
-            batch_sizes = {8: int(12*multiplier), 12: int(20*multiplier), 16: int(32*multiplier), 24: int(48*multiplier), 32: int(80*multiplier)}
-        else:  # 1024+
-            batch_sizes = {8: int(8*multiplier), 12: int(16*multiplier), 16: int(24*multiplier), 24: int(32*multiplier), 32: int(48*multiplier)}
-        
-        # Find closest VRAM match
-        for vram, batch in sorted(batch_sizes.items()):
-            if vram_gb <= vram:
-                return batch
-        
-        return batch_sizes[max(batch_sizes.keys())]
-    
     def validate_dataset(self, dataset_yaml):
-        """Validate dataset structure and count images"""
-        if not Path(dataset_yaml).exists():
-            raise FileNotFoundError(f"Dataset YAML not found: {dataset_yaml}")
+        """Validate dataset"""
+        dataset_yaml = Path(dataset_yaml)
         
-        # Get the directory where the YAML file is located
-        yaml_dir = Path(dataset_yaml).parent
+        if not dataset_yaml.exists():
+            raise FileNotFoundError(f"Dataset YAML not found: {dataset_yaml}")
         
         with open(dataset_yaml, 'r') as f:
             dataset_config = yaml.safe_load(f)
         
-        # Resolve paths relative to the YAML file directory
-        train_path = yaml_dir / Path(dataset_config.get('train', ''))
-        val_path = yaml_dir / Path(dataset_config.get('val', ''))
+        # Get base path from YAML (if it exists, use it; otherwise use YAML directory)
+        base_path = dataset_config.get('path', str(dataset_yaml.parent))
+        
+        # Build full paths for train and val
+        train_rel = dataset_config.get('train', '')
+        val_rel = dataset_config.get('val', '')
+        
+        # Handle both absolute and relative paths
+        train_path = Path(base_path) / train_rel if train_rel else None
+        val_path = Path(base_path) / val_rel if val_rel else None
         
         # Count images
         train_images = 0
         val_images = 0
         
-        if train_path.exists():
+        if train_path and train_path.exists():
             train_images = len(list(train_path.glob('**/*.jpg'))) + \
-                          len(list(train_path.glob('**/*.png'))) + \
-                          len(list(train_path.glob('**/*.jpeg')))
+                          len(list(train_path.glob('**/*.png')))
         
-        if val_path.exists():
+        if val_path and val_path.exists():
             val_images = len(list(val_path.glob('**/*.jpg'))) + \
-                        len(list(val_path.glob('**/*.png'))) + \
-                        len(list(val_path.glob('**/*.jpeg')))
+                        len(list(val_path.glob('**/*.png')))
         
         if train_images == 0:
-            raise ValueError("No training images found!")
+            raise ValueError(f"No training images found! Checked: {train_path}")
         
         print(f"\n📊 Dataset Statistics:")
+        print(f"   Training path: {train_path}")
         print(f"   Training images: {train_images}")
         print(f"   Validation images: {val_images}")
         print(f"   Total images: {train_images + val_images}")
-        print(f"   Classes: {len(dataset_config.get('names', []))}")
         
         return train_images, val_images
     
-    def find_checkpoint(self):
-        """Find the latest checkpoint to resume training"""
-        if not self.project_dir.exists():
-            return None
+    def train(self, dataset_yaml, resume=False):
+        """Train with stable configuration"""
         
-        # Find all training runs
-        runs = list(self.project_dir.glob("train_*"))
-        if not runs:
-            return None
-        
-        # Get most recent
-        latest_run = max(runs, key=lambda x: x.stat().st_mtime)
-        checkpoint = latest_run / 'weights' / 'last.pt'
-        
-        if checkpoint.exists():
-            print(f"🔄 Found checkpoint: {checkpoint}")
-            return str(checkpoint)
-        
-        return None
-    
-    def prompt_training_parameters(self):
-        """Prompt user for training parameters after model selection"""
         print(f"\n{'='*80}")
-        print(f"⚙️  Training Parameters Configuration")
-        print(f"{'='*80}\n")
-
-        defaults = {
-            'epochs': 500,
-            'imgsz': 832,
-            'lr0': 0.01,
-            'patience': 50
-        }
-
-        print("Enter training parameters or press Enter to use defaults:\n")
-
-        try:
-            epochs_input = input(f"Epochs [default: {defaults['epochs']}]: ").strip()
-            epochs = int(epochs_input) if epochs_input else defaults['epochs']
-
-            imgsz_input = input(f"Image size [default: {defaults['imgsz']}]: ").strip()
-            imgsz = int(imgsz_input) if imgsz_input else defaults['imgsz']
-
-            lr_input = input(f"Learning rate [default: {defaults['lr0']}]: ").strip()
-            lr0 = float(lr_input) if lr_input else defaults['lr0']
-
-            patience_input = input(f"Early stopping patience [default: {defaults['patience']}]: ").strip()
-            patience = int(patience_input) if patience_input else defaults['patience']
-
-            return {
-                'epochs': epochs,
-                'imgsz': imgsz,
-                'lr0': lr0,
-                'patience': patience
-            }
-
-        except (EOFError, KeyboardInterrupt, ValueError):
-            print("\n📌 Using default parameters")
-            return defaults
-    
-    def train(self, dataset_yaml, resume=True):
-        """
-        Train YOLO model with maximum performance and accuracy
-        
-        Args:
-            dataset_yaml: Path to dataset YAML file
-            resume: Whether to resume from checkpoint if available
-        """
-        print("\n" + "="*80)
-        print("🚀 YOLO11 MAXIMUM PERFORMANCE & ACCURACY TRAINING")
-        print("="*80)
+        print(f"🚀 YOLO11m FIRE DETECTION TRAINING")
+        print(f"{'='*80}")
         
         # Validate dataset
-        train_count, val_count = self.validate_dataset(dataset_yaml)
+        self.validate_dataset(dataset_yaml)
         
-        # Prompt for training parameters AFTER model selection
-        params = self.prompt_training_parameters()
+        # Load model
+        if not Path(self.model_path).exists() and self.model_path != 'yolo11m.pt':
+            print(f"❌ Model file not found: {self.model_path}")
+            return
         
-        # Check for checkpoint
-        checkpoint = self.find_checkpoint() if resume else None
+        print(f"\n🔄 Loading model: {self.model_path}")
+        model = YOLO(self.model_path)
         
-        # Load model - use selected model if available
-        if self.model_path:
-            model_to_load = self.model_path
-        else:
-            model_to_load = self.models_dir / self.config.get('model', 'yolo11m.pt')
-        
-        if checkpoint:
-            print(f"\n🔄 Resuming from checkpoint: {checkpoint}")
-            model = YOLO(checkpoint)
-        else:
-            print(f"\n🆕 Starting fresh training with: {model_to_load}")
-            if not Path(model_to_load).exists():
-                print(f"⚠️  Model not found locally. Downloading: {model_to_load}")
-                model = YOLO(str(model_to_load))
-            else:
-                model = YOLO(str(model_to_load))
-        
-        # Calculate optimal batch size
+        # GPU memory optimization
         if self.device == 'cuda':
-            vram_gb = torch.cuda.get_device_properties(0).total_memory / 1024**3
-            optimal_batch = self.get_optimal_batch_size(vram_gb)
-            batch_size = self.config.get('batch_size', optimal_batch)
-            
-            # RTX 5080 Blackwell optimization - can handle larger batches
-            gpu_name = torch.cuda.get_device_name(0)
-            if '5080' in gpu_name or '5090' in gpu_name:
-                batch_size = int(batch_size * 1.2)  # 20% more for Blackwell efficiency
-                print(f"🚀 Blackwell GPU detected - increasing batch size by 20% to {batch_size}")
-        else:
-            batch_size = 2
+            torch.cuda.empty_cache()
+            print(f"💾 GPU Memory cleared")
         
-        # Training arguments - OPTIMIZED FOR MAXIMUM PERFORMANCE & ACCURACY
+        # Stable training configuration (proven to work without NaN)
         train_args = {
-            # Basic settings - USING USER-PROVIDED PARAMETERS
             'data': str(dataset_yaml),
-            'epochs': params['epochs'],           # From user prompt
-            'imgsz': params['imgsz'],             # From user prompt
-            'batch': batch_size,
+            'epochs': 500,
+            'imgsz': 832,
+            'batch': 16,  # Stable batch size
             'device': self.device,
-            'workers': self.config.get('workers', 8),
-            'project': str(self.project_dir),
+            'workers': 12,
+            'project': str(PROJECT_ROOT / 'runs'),
             'name': f"train_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             
-            # Optimizer settings - BEST FOR ACCURACY
-            'optimizer': 'AdamW',           # Best modern optimizer
-            'lr0': params['lr0'],                   # From user prompt
-            'lrf': 0.001,                   # Final learning rate
-            'momentum': 0.937,              # SGD momentum
-            'weight_decay': 0.0005,         # L2 regularization
-            'warmup_epochs': 5.0,           # Warmup epochs for stable training
-            'warmup_momentum': 0.8,         # Warmup momentum
-            'warmup_bias_lr': 0.1,          # Warmup bias learning rate
+            # Optimizer and learning rate
+            'optimizer': 'AdamW',
+            'lr0': 0.01,
+            'lrf': 0.001,
+            'momentum': 0.937,
+            'weight_decay': 0.0005,
+            'warmup_epochs': 5,
+            'warmup_momentum': 0.8,
+            'warmup_bias_lr': 0.1,
             
-            # Data augmentation - ENHANCED FOR GENERALIZATION
-            'hsv_h': 0.015,                 # HSV-Hue augmentation
-            'hsv_s': 0.7,                   # HSV-Saturation augmentation
-            'hsv_v': 0.4,                   # HSV-Value augmentation
-            'degrees': 10.0,                # Rotation degrees
-            'translate': 0.2,               # Translation
-            'scale': 0.9,                   # Scale variation
-            'shear': 2.0,                   # Shear degrees
-            'perspective': 0.0001,          # Perspective transformation
-            'flipud': 0.0,                  # Vertical flip probability
-            'fliplr': 0.5,                  # Horizontal flip probability
-            'mosaic': 1.0,                  # Mosaic augmentation probability
-            'mixup': 0.15,                  # MixUp augmentation probability
-            'copy_paste': 0.3,              # Copy-paste augmentation probability
+            # Data augmentation
+            'hsv_h': 0.015,
+            'hsv_s': 0.7,
+            'hsv_v': 0.4,
+            'degrees': 10.0,
+            'translate': 0.2,
+            'scale': 0.9,
+            'shear': 2.0,
+            'perspective': 0.0001,
+            'flipud': 0.0,
+            'fliplr': 0.5,
+            'mosaic': 1.0,
+            'mixup': 0.15,
+            'copy_paste': 0.3,
             
-            # Advanced training settings
-            'cos_lr': True,                 # Cosine learning rate scheduler
-            'close_mosaic': 15,             # Disable mosaic in last N epochs
-            'amp': True,                    # Automatic Mixed Precision (FP16)
-            'fraction': 0.95,               # GPU memory fraction to use
-            'patience': params['patience'], # From user prompt - Early stopping
+            # Advanced settings
+            'cos_lr': True,
+            'close_mosaic': 15,
+            'amp': True,
+            'fraction': 0.95,
+            'patience': 50,
             
             # Validation and saving
-            'val': True,                    # Validate during training
-            'save': True,                   # Save checkpoints
-            'save_period': -1,              # Disable periodic saves (only best/last)
-            'cache': 'disk',                # Cache images on disk for stability
-            'plots': True,                  # Generate plots
-            'verbose': True,                # Verbose output
+            'val': True,
+            'save': True,
+            'save_period': -1,
+            'cache': 'ram',
+            'plots': True,
+            'verbose': True,
             
-            # Multi-scale training for better generalization
-            'rect': False,                  # Rectangular training (disabled for multi-scale)
-            
-            # Resume settings
-            'resume': resume and checkpoint is not None,
+            # Multi-scale disabled for stability
+            'rect': False,
+            'resume': resume,
         }
         
         # Display configuration
         print(f"\n⚙️  Training Configuration:")
-        print(f"   Model: {self.config.get('model')}")
-        print(f"   Image Size: {train_args['imgsz']}px")
-        print(f"   Batch Size: {batch_size}")
-        print(f"   Epochs: {train_args['epochs']}")
+        print(f"   Image Size: 832px")
+        print(f"   Batch Size: 16")
+        print(f"   Epochs: 500")
         print(f"   Device: {self.device}")
-        print(f"   Workers: {train_args['workers']}")
-        print(f"   Optimizer: {train_args['optimizer']}")
-        print(f"   Learning Rate: {train_args['lr0']} → {train_args['lrf']}")
-        print(f"   AMP (FP16): {train_args['amp']}")
-        print(f"   Multi-scale: {not train_args['rect']}")
-        print(f"   Early Stopping: {train_args['patience']} epochs")
+        print(f"   Workers: 12")
+        print(f"   Optimizer: AdamW")
+        print(f"   Learning Rate: 0.01 → 0.001")
+        print(f"   AMP (FP16): True")
+        print(f"   Early Stopping: 50 epochs")
         
-        # Memory optimization
-        if self.device == 'cuda':
-            torch.cuda.empty_cache()
-            print(f"\n💾 GPU Memory cleared")
-        
-        # Start training
         print(f"\n{'='*80}")
         print(f"🏋️  Starting training...")
         print(f"{'='*80}\n")
@@ -501,7 +262,6 @@ class YOLOTrainer:
                 print(f"   mAP50-95: {metrics.box.map:.4f}")
                 print(f"   Precision: {metrics.box.mp:.4f}")
                 print(f"   Recall: {metrics.box.mr:.4f}")
-                print(f"   F1-Score: {2 * (metrics.box.mp * metrics.box.mr) / (metrics.box.mp + metrics.box.mr + 1e-10):.4f}")
             
             # GPU stats
             if self.device == 'cuda':
@@ -517,14 +277,6 @@ class YOLOTrainer:
             
         except Exception as e:
             print(f"\n❌ Training failed: {str(e)}")
-            
-            if self.device == 'cuda' and 'out of memory' in str(e).lower():
-                print(f"\n💡 GPU Out of Memory! Try these solutions:")
-                print(f"   1. Reduce batch size: --batch 24 or 16")
-                print(f"   2. Reduce image size: --imgsz 640")
-                print(f"   3. Reduce workers: --workers 4")
-                print(f"   4. Close other GPU applications")
-            
             raise
         
         finally:
@@ -538,29 +290,19 @@ def main():
     """Main training function"""
     import argparse
     
-    parser = argparse.ArgumentParser(description='YOLO11 Maximum Performance Training')
-    parser.add_argument('--data', type=str, required=True,
+    parser = argparse.ArgumentParser(description='YOLO11m Fire Detection Training')
+    parser.add_argument('--data', type=str, default='dataset/data.yaml',
                        help='Path to dataset YAML file')
-    parser.add_argument('--config', type=str, default=None,
-                       help='Path to training config YAML')
-    parser.add_argument('--model', type=str, default=None,
-                       help='Path to model file (use default if not specified)')
     parser.add_argument('--resume', action='store_true',
                        help='Resume from last checkpoint')
-    parser.add_argument('--no-resume', dest='resume', action='store_false',
-                       help='Start fresh training')
-    parser.set_defaults(resume=True)
     
     args = parser.parse_args()
     
     # Create trainer
-    trainer = YOLOTrainer(config_path=args.config)
+    trainer = SimpleYOLOTrainer()
     
-    # Select model if not provided via command line
-    if args.model:
-        trainer.model_path = args.model
-    else:
-        trainer.select_model()
+    # Select model
+    trainer.select_model()
     
     # Start training
     trainer.train(dataset_yaml=args.data, resume=args.resume)

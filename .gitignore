@@ -57,6 +57,7 @@ dataset/data.yaml
 
 # Training runs and results
 runs/*
+scripts/runs/*
 
 # Pre-trained model weights (large files)
 models/*
