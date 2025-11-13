@@ -86,7 +86,9 @@ class LabelStudioImporter:
         root.withdraw()
         
         # Select image folder
-        initial_dir = Path(PROJECT_ROOT) / "dataset" / "images"
+        initial_dir = Path(PROJECT_ROOT) / "raw_dataset"
+        if not initial_dir.exists():
+            initial_dir = Path(PROJECT_ROOT) / "dataset" / "images"
         if not initial_dir.exists():
             initial_dir = PROJECT_ROOT
         
@@ -101,8 +103,11 @@ class LabelStudioImporter:
         
         self.image_folder = Path(image_folder)
         
-        # Select label folder
-        initial_dir = Path(PROJECT_ROOT) / "dataset" / "labels"
+        # Select label folder - default to same folder as images (for raw_dataset workflow)
+        initial_dir = self.image_folder  # Use the same folder where images are
+        if not any(initial_dir.glob("*.txt")):  # If no .txt files in image folder
+            # Fallback to dataset/labels
+            initial_dir = Path(PROJECT_ROOT) / "dataset" / "labels"
         if not initial_dir.exists():
             initial_dir = PROJECT_ROOT
         
@@ -403,6 +408,13 @@ Steps:
                 f.write(config)
             
             print(f"✓ Created label_config.xml\n")
+            
+            # Copy serve_images.py to project directory
+            serve_images_src = Path(__file__).parent / "serve_images.py"
+            serve_images_dst = self.project_dir / "serve_images.py"
+            if serve_images_src.exists():
+                shutil.copy2(serve_images_src, serve_images_dst)
+                print(f"✓ Copied serve_images.py\n")
             
             # Show XML config in popup window
             self.show_config_popup(config)

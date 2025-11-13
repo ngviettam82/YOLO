@@ -63,7 +63,7 @@ echo STEP 2: Starting Image Server in separate window...
 echo ============================================================================
 echo.
 
-start "Image Server" /d "%PROJECT_DIR%" cmd /c "python serve_images.py & pause"
+start "Image Server" cmd /c "cd /d "%CD%" && python AutoLabel\scripts\serve_images.py & pause"
 
 echo Image server started in separate window!
 echo Waiting 3 seconds...

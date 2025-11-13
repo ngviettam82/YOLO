@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 YOLO11 Maximum Performance & Accuracy Training Script
 Optimized for: NVIDIA GeForce RTX 5080 (16GB VRAM) - Blackwell Architecture
@@ -239,11 +239,15 @@ class YOLOTrainer:
         if not Path(dataset_yaml).exists():
             raise FileNotFoundError(f"Dataset YAML not found: {dataset_yaml}")
         
+        # Get the directory where the YAML file is located
+        yaml_dir = Path(dataset_yaml).parent
+        
         with open(dataset_yaml, 'r') as f:
             dataset_config = yaml.safe_load(f)
         
-        train_path = Path(dataset_config.get('train', ''))
-        val_path = Path(dataset_config.get('val', ''))
+        # Resolve paths relative to the YAML file directory
+        train_path = yaml_dir / Path(dataset_config.get('train', ''))
+        val_path = yaml_dir / Path(dataset_config.get('val', ''))
         
         # Count images
         train_images = 0
@@ -290,6 +294,45 @@ class YOLOTrainer:
         
         return None
     
+    def prompt_training_parameters(self):
+        """Prompt user for training parameters after model selection"""
+        print(f"\n{'='*80}")
+        print(f"⚙️  Training Parameters Configuration")
+        print(f"{'='*80}\n")
+
+        defaults = {
+            'epochs': 500,
+            'imgsz': 832,
+            'lr0': 0.01,
+            'patience': 50
+        }
+
+        print("Enter training parameters or press Enter to use defaults:\n")
+
+        try:
+            epochs_input = input(f"Epochs [default: {defaults['epochs']}]: ").strip()
+            epochs = int(epochs_input) if epochs_input else defaults['epochs']
+
+            imgsz_input = input(f"Image size [default: {defaults['imgsz']}]: ").strip()
+            imgsz = int(imgsz_input) if imgsz_input else defaults['imgsz']
+
+            lr_input = input(f"Learning rate [default: {defaults['lr0']}]: ").strip()
+            lr0 = float(lr_input) if lr_input else defaults['lr0']
+
+            patience_input = input(f"Early stopping patience [default: {defaults['patience']}]: ").strip()
+            patience = int(patience_input) if patience_input else defaults['patience']
+
+            return {
+                'epochs': epochs,
+                'imgsz': imgsz,
+                'lr0': lr0,
+                'patience': patience
+            }
+
+        except (EOFError, KeyboardInterrupt, ValueError):
+            print("\n📌 Using default parameters")
+            return defaults
+    
     def train(self, dataset_yaml, resume=True):
         """
         Train YOLO model with maximum performance and accuracy
@@ -304,6 +347,9 @@ class YOLOTrainer:
         
         # Validate dataset
         train_count, val_count = self.validate_dataset(dataset_yaml)
+        
+        # Prompt for training parameters AFTER model selection
+        params = self.prompt_training_parameters()
         
         # Check for checkpoint
         checkpoint = self.find_checkpoint() if resume else None
@@ -341,10 +387,10 @@ class YOLOTrainer:
         
         # Training arguments - OPTIMIZED FOR MAXIMUM PERFORMANCE & ACCURACY
         train_args = {
-            # Basic settings
+            # Basic settings - USING USER-PROVIDED PARAMETERS
             'data': str(dataset_yaml),
-            'epochs': self.config.get('epochs', 500),
-            'imgsz': self.config.get('image_size', 832),
+            'epochs': params['epochs'],           # From user prompt
+            'imgsz': params['imgsz'],             # From user prompt
             'batch': batch_size,
             'device': self.device,
             'workers': self.config.get('workers', 8),
@@ -353,8 +399,8 @@ class YOLOTrainer:
             
             # Optimizer settings - BEST FOR ACCURACY
             'optimizer': 'AdamW',           # Best modern optimizer
-            'lr0': 0.01,                    # Initial learning rate
-            'lrf': 0.0001,                  # Final learning rate (1% of initial)
+            'lr0': params['lr0'],                   # From user prompt
+            'lrf': 0.001,                   # Final learning rate
             'momentum': 0.937,              # SGD momentum
             'weight_decay': 0.0005,         # L2 regularization
             'warmup_epochs': 5.0,           # Warmup epochs for stable training
@@ -365,11 +411,11 @@ class YOLOTrainer:
             'hsv_h': 0.015,                 # HSV-Hue augmentation
             'hsv_s': 0.7,                   # HSV-Saturation augmentation
             'hsv_v': 0.4,                   # HSV-Value augmentation
-            'degrees': 15.0,                # Rotation degrees
+            'degrees': 10.0,                # Rotation degrees
             'translate': 0.2,               # Translation
             'scale': 0.9,                   # Scale variation
-            'shear': 5.0,                   # Shear degrees
-            'perspective': 0.0002,          # Perspective transformation
+            'shear': 2.0,                   # Shear degrees
+            'perspective': 0.0001,          # Perspective transformation
             'flipud': 0.0,                  # Vertical flip probability
             'fliplr': 0.5,                  # Horizontal flip probability
             'mosaic': 1.0,                  # Mosaic augmentation probability
@@ -378,16 +424,16 @@ class YOLOTrainer:
             
             # Advanced training settings
             'cos_lr': True,                 # Cosine learning rate scheduler
-            'close_mosaic': 20,             # Disable mosaic in last N epochs
+            'close_mosaic': 15,             # Disable mosaic in last N epochs
             'amp': True,                    # Automatic Mixed Precision (FP16)
             'fraction': 0.95,               # GPU memory fraction to use
-            'patience': self.config.get('patience', 100),  # Early stopping
+            'patience': params['patience'], # From user prompt - Early stopping
             
             # Validation and saving
             'val': True,                    # Validate during training
             'save': True,                   # Save checkpoints
             'save_period': -1,              # Disable periodic saves (only best/last)
-            'cache': 'ram',                 # Cache images in RAM for speed
+            'cache': 'disk',                # Cache images on disk for stability
             'plots': True,                  # Generate plots
             'verbose': True,                # Verbose output
             

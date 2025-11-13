@@ -1,0 +1,20 @@
+# YOLO dataset configuration
+path: C:\Users\ADMIN\Documents\Code\YOLO  # dataset root
+train: images/train
+val: images/val
+test: images/test
+
+# Number of classes
+nc: 3
+
+# Class names
+names:
+  0: class_0
+  1: class_1
+  2: class_2
+
+# Update class names above to match your object categories
+# Example:
+#   0: person
+#   1: car
+#   2: dog

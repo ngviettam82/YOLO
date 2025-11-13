@@ -359,15 +359,15 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python label_images.py --train-dir dataset/images/train
-  python label_images.py --train-dir dataset/images/train --tool label-studio
-  python label_images.py --train-dir dataset/images/train --tool roboflow
+  python label_images.py --train-dir raw_dataset
+  python label_images.py --train-dir raw_dataset --tool label-studio
+  python label_images.py --train-dir raw_dataset --tool roboflow
   python label_images.py --train-dir dataset/images/train --config --num-classes 3
         """
     )
     
-    parser.add_argument('--train-dir', type=str, default='dataset/images/train',
-                       help='Path to training images directory')
+    parser.add_argument('--train-dir', type=str, default='raw_dataset',
+                       help='Path to training images directory (default: raw_dataset)')
     parser.add_argument('--tool', type=str, choices=['label-studio', 'cvat', 'roboflow', 'menu'],
                        default='label-studio', help='Labeling tool to use (default: label-studio)')
     parser.add_argument('--config', action='store_true',

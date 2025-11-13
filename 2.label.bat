@@ -22,15 +22,18 @@ echo ======================================
 echo   YOLO Image Labeling Tool
 echo ======================================
 echo.
+echo This script helps you label images in raw_dataset/
+echo Labels will be saved alongside images as .txt files
+echo.
 
 REM Activate virtual environment
 call .venv\Scripts\activate.bat
 
-REM Check if images exist
-echo [1/2] Checking for training images...
-if not exist "dataset\images\train" (
-    echo ERROR: No training images folder found!
-    echo Please run quickstart_dataset.bat first to prepare the dataset.
+REM Check if raw_dataset exists
+echo [1/2] Checking for raw images...
+if not exist "raw_dataset" (
+    echo ERROR: raw_dataset folder not found!
+    echo Please create raw_dataset folder and add your images there.
     echo.
     pause
     exit /b 1
@@ -38,12 +41,12 @@ if not exist "dataset\images\train" (
 
 setlocal enabledelayedexpansion
 set "count=0"
-for /r "dataset\images\train" %%f in (*.jpg *.jpeg *.png *.bmp *.gif *.webp) do (
+for /r "raw_dataset" %%f in (*.jpg *.jpeg *.png *.bmp *.gif *.webp) do (
     set /a count+=1
 )
 if !count! equ 0 (
-    echo ERROR: No images found in dataset/images/train/
-    echo Please run quickstart_dataset.bat first to prepare the dataset.
+    echo ERROR: No images found in raw_dataset/
+    echo Please add your images to raw_dataset/ first.
     echo.
     pause
     exit /b 1
@@ -103,14 +106,13 @@ echo ======================================
 echo   Labeling Complete!
 echo ======================================
 echo.
+echo Your labels are saved in raw_dataset/ as .txt files
+echo.
 echo Next steps:
-echo 1. Export annotations from Label Studio as YOLO format
+echo 1. Run 2.dataset.bat to split labeled data into train/val/test
+echo    This will copy images and labels to dataset/ folder
 echo.
-echo 2. Place .txt files in: dataset\labels\train\
-echo.
-echo 3. Update class names in dataset/data.yaml
-echo.
-echo 4. Start training:
+echo 2. Start training:
 echo    Double-click 4.train.bat
 echo.
 pause
