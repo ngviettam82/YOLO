@@ -41,24 +41,22 @@ echo.
 REM Display training options
 echo [2/3] Training Configuration:
 echo   Model: Will be selected interactively (pretrained or trained)
-echo   Epochs: 500 (default, or enter custom value)
-echo   Image Size: 832 (default, or enter custom value)
-echo   Batch Size: 32 (optimized for RTX 5080 - fixed)
-echo   Learning Rate: 0.01 (default, or enter custom value)
-echo   Patience: 50 (early stopping)
-echo   Resume: Enabled (continue from last checkpoint if available)
+echo   Epochs: 500 (optimized configuration)
+echo   Image Size: 832px (optimized configuration)
+echo   Batch Size: 16 (optimized for RTX 5080)
+echo   Learning Rate: 0.01 ^-^> 0.001 (optimized for stability)
+echo   Patience: 50 epochs (early stopping)
+echo   Optimizer: AdamW (proven stable)
 echo.
 
-REM Start training with interactive configuration
+REM Start training with interactive model selection
 echo [3/3] Starting training...
 echo This will take several hours depending on your dataset size...
 echo.
 echo You will be prompted to select:
-echo   1. Training parameters (or press Enter for defaults)
-echo   2. Model source (pretrained or trained models)
-echo   3. Model size (yolo11n, s, m, l, x or previously trained model)
+echo   1. Model source: Pretrained (fresh) or Trained (file selection)
 echo.
-echo Press Enter to use defaults. Type values to customize. Type your answers now:
+echo Press Enter and follow the prompts...
 echo.
 python scripts\train_optimized.py --data dataset/data.yaml --resume
 if errorlevel 1 (
