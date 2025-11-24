@@ -251,13 +251,6 @@ class SimpleYOLOTrainer:
             'warmup_bias_lr': 0.0,  # Set to 0 for safety
             
             # Conservative data augmentation
-            'hsv_h': 0.01,       # Reduced from 0.015
-            'hsv_s': 0.5,        # Reduced from 0.7
-            'hsv_v': 0.3,        # Reduced from 0.4
-            'degrees': 5.0,      # Reduced from 10.0
-            'translate': 0.1,    # Reduced from 0.2
-            'scale': 0.95,       # Reduced from 0.9
-            'shear': 1.0,        # Reduced from 2.0
             'hsv_h': 0.015,      # Hue augmentation
             'hsv_s': 0.7,        # Saturation augmentation
             'hsv_v': 0.4,        # Value augmentation
@@ -267,17 +260,14 @@ class SimpleYOLOTrainer:
             'shear': 0.0,        # No shear
             'perspective': 0.0,  # Disabled (was 0.0001)
             'flipud': 0.0,
-            'fliplr': 0.3,       # Reduced from 0.5
             'fliplr': 0.5,       # Standard horizontal flip
             'mosaic': 1.0,
-            'mixup': 0.0,        # Disabled (was 0.15)
             'mixup': 0.1,        # Re-enable MixUp for better generalization
             'copy_paste': 0.0,   # Disabled (was 0.3)
             
             # Advanced settings - NaN prevention
             'cos_lr': False,     # Changed from True (simpler schedule)
             'close_mosaic': 10,  # Reduced from 15
-            'amp': False,        # Disabled (can cause NaN)
             'amp': True,         # Enable Mixed Precision for speed & memory
             'fraction': 1.0,     # Use all data
             'patience': patience, # Use parameter
@@ -302,11 +292,9 @@ class SimpleYOLOTrainer:
         print(f"   Epochs: {epochs}")
         print(f"   Device: {self.device}")
         print(f"   Workers: 8")
-        print(f"   Optimizer: SGD (stable)")
         print(f"   Optimizer: AdamW")
         print(f"   Learning Rate: {lr0} → {lr0 * 0.1} (initial → final)")
         print(f"   Warmup: 10 epochs")
-        print(f"   AMP (FP16): Disabled")
         print(f"   AMP (FP16): Enabled")
         print(f"   Early Stopping (Patience): {patience} epochs")
         print(f"   ⚠️  These settings prioritize STABILITY over speed")
