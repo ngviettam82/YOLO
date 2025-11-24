@@ -266,11 +266,12 @@ class SimpleYOLOTrainer:
             'copy_paste': 0.0,   # Disabled (was 0.3)
             
             # Advanced settings - NaN prevention
-            'cos_lr': False,     # Changed from True (simpler schedule)
+            'cos_lr': True,      # Use cosine LR schedule for smoother decay
             'close_mosaic': 10,  # Reduced from 15
             'amp': True,         # Enable Mixed Precision for speed & memory
             'fraction': 1.0,     # Use all data
             'patience': patience, # Use parameter
+            'ema': True,         # Exponential moving average for stability
             
             # Validation and saving
             'val': True,
