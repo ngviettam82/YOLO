@@ -185,13 +185,19 @@ class SimpleYOLOTrainer:
         
         return train_images, val_images
     
-    def train(self, dataset_yaml, resume=False, checkpoint_path=None):
+    def train(self, dataset_yaml, resume=False, checkpoint_path=None, 
+              epochs=500, imgsz=640, batch=8, lr0=0.001, patience=50):
         """Train with stable configuration
         
         Args:
             dataset_yaml: Path to dataset YAML
             resume: Whether to resume training from checkpoint
             checkpoint_path: Path to checkpoint file for resuming (if resume=True)
+            epochs: Number of training epochs (default: 500)
+            imgsz: Image size (default: 640)
+            batch: Batch size (default: 8)
+            lr0: Initial learning rate (default: 0.001)
+            patience: Early stopping patience (default: 50)
         """
         
         print(f"\n{'='*80}")
@@ -223,73 +229,87 @@ class SimpleYOLOTrainer:
             torch.cuda.empty_cache()
             print(f"💾 GPU Memory cleared")
         
-        # Stable training configuration (proven to work without NaN)
+        # Stable training configuration - NaN-resistant settings
         train_args = {
             'data': str(dataset_yaml),
-            'epochs': 5000,
-            'imgsz': 832,
-            'batch': 24,  # Stable batch size
+            'epochs': epochs,
+            'imgsz': imgsz,
+            'batch': batch,
             'device': self.device,
-            'workers': 12,
+            'workers': 8,  # Reduced from 12
             'project': str(PROJECT_ROOT / 'runs'),
             'name': f"train_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             
-            # Optimizer and learning rate
-            'optimizer': 'AdamW',
-            'lr0': 0.01,
-            'lrf': 0.001,
+            # Optimizer and learning rate - Conservative for NaN prevention
+            'optimizer': 'AdamW',  # Changed from AdamW (more stable)
+            'lr0': lr0,          # Use parameter
+            'lrf': lr0 * 0.1,    # Final LR is 10% of initial
             'momentum': 0.937,
             'weight_decay': 0.0005,
-            'warmup_epochs': 5,
+            'warmup_epochs': 10, # Increased from 5
             'warmup_momentum': 0.8,
-            'warmup_bias_lr': 0.1,
+            'warmup_bias_lr': 0.0,  # Set to 0 for safety
             
-            # Data augmentation
-            'hsv_h': 0.015,
-            'hsv_s': 0.7,
-            'hsv_v': 0.4,
-            'degrees': 10.0,
-            'translate': 0.2,
-            'scale': 0.9,
-            'shear': 2.0,
-            'perspective': 0.0001,
+            # Conservative data augmentation
+            'hsv_h': 0.01,       # Reduced from 0.015
+            'hsv_s': 0.5,        # Reduced from 0.7
+            'hsv_v': 0.3,        # Reduced from 0.4
+            'degrees': 5.0,      # Reduced from 10.0
+            'translate': 0.1,    # Reduced from 0.2
+            'scale': 0.95,       # Reduced from 0.9
+            'shear': 1.0,        # Reduced from 2.0
+            'hsv_h': 0.015,      # Hue augmentation
+            'hsv_s': 0.7,        # Saturation augmentation
+            'hsv_v': 0.4,        # Value augmentation
+            'degrees': 0.0,      # No rotation
+            'translate': 0.1,    # Keep translation minimal
+            'scale': 0.5,        # Standard scaling
+            'shear': 0.0,        # No shear
+            'perspective': 0.0,  # Disabled (was 0.0001)
             'flipud': 0.0,
-            'fliplr': 0.5,
+            'fliplr': 0.3,       # Reduced from 0.5
+            'fliplr': 0.5,       # Standard horizontal flip
             'mosaic': 1.0,
-            'mixup': 0.15,
-            'copy_paste': 0.3,
+            'mixup': 0.0,        # Disabled (was 0.15)
+            'mixup': 0.1,        # Re-enable MixUp for better generalization
+            'copy_paste': 0.0,   # Disabled (was 0.3)
             
-            # Advanced settings
-            'cos_lr': True,
-            'close_mosaic': 15,
-            'amp': True,
-            'fraction': 0.95,
-            'patience': 200,
+            # Advanced settings - NaN prevention
+            'cos_lr': False,     # Changed from True (simpler schedule)
+            'close_mosaic': 10,  # Reduced from 15
+            'amp': False,        # Disabled (can cause NaN)
+            'amp': True,         # Enable Mixed Precision for speed & memory
+            'fraction': 1.0,     # Use all data
+            'patience': patience, # Use parameter
             
             # Validation and saving
             'val': True,
             'save': True,
             'save_period': -1,
-            'cache': 'ram',
+            'cache': 'disk',
             'plots': True,
             'verbose': True,
             
-            # Multi-scale disabled for stability
+            # Stability settings
             'rect': False,
-            'resume': resume,  # Use resume parameter
+            'resume': resume,
         }
         
         # Display configuration
         print(f"\n⚙️  Training Configuration:")
-        print(f"   Image Size: 832px")
-        print(f"   Batch Size: 16")
-        print(f"   Epochs: 500")
+        print(f"   Image Size: {imgsz}px")
+        print(f"   Batch Size: {batch}")
+        print(f"   Epochs: {epochs}")
         print(f"   Device: {self.device}")
-        print(f"   Workers: 12")
+        print(f"   Workers: 8")
+        print(f"   Optimizer: SGD (stable)")
         print(f"   Optimizer: AdamW")
-        print(f"   Learning Rate: 0.01 → 0.001")
-        print(f"   AMP (FP16): True")
-        print(f"   Early Stopping: 200 epochs")
+        print(f"   Learning Rate: {lr0} → {lr0 * 0.1} (initial → final)")
+        print(f"   Warmup: 10 epochs")
+        print(f"   AMP (FP16): Disabled")
+        print(f"   AMP (FP16): Enabled")
+        print(f"   Early Stopping (Patience): {patience} epochs")
+        print(f"   ⚠️  These settings prioritize STABILITY over speed")
         
         print(f"\n{'='*80}")
         print(f"🏋️  Starting training...")
@@ -359,6 +379,16 @@ def main():
     parser = argparse.ArgumentParser(description='YOLO11m Fire Detection Training')
     parser.add_argument('--data', type=str, default='dataset/data.yaml',
                        help='Path to dataset YAML file')
+    parser.add_argument('--epochs', type=int, default=500,
+                       help='Number of training epochs (default: 500)')
+    parser.add_argument('--imgsz', type=int, default=640,
+                       help='Image size (default: 640)')
+    parser.add_argument('--batch', type=int, default=8,
+                       help='Batch size (default: 8)')
+    parser.add_argument('--lr0', type=float, default=0.001,
+                       help='Initial learning rate (default: 0.001)')
+    parser.add_argument('--patience', type=int, default=50,
+                       help='Early stopping patience in epochs (default: 50)')
     parser.add_argument('--resume', action='store_true',
                        help='Resume from last checkpoint (skip training mode selection)')
     
@@ -378,8 +408,17 @@ def main():
     else:
         resume, checkpoint_path = trainer.select_training_mode()
     
-    # Start training
-    trainer.train(dataset_yaml=args.data, resume=resume, checkpoint_path=checkpoint_path)
+    # Start training with custom parameters
+    trainer.train(
+        dataset_yaml=args.data, 
+        resume=resume, 
+        checkpoint_path=checkpoint_path,
+        epochs=args.epochs,
+        imgsz=args.imgsz,
+        batch=args.batch,
+        lr0=args.lr0,
+        patience=args.patience
+    )
 
 
 if __name__ == "__main__":

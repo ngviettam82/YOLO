@@ -38,6 +38,7 @@ wheels/
 # Raw dataset images (user to provide)
 raw_dataset/*
 
+
 # Split dataset images (auto-generated)
 dataset/images/train/*
 dataset/images/val/*
@@ -70,6 +71,7 @@ models/*
 *.tflite
 *.mlmodel
 *_openvino_model/
+*.rar
 
 # ===================================================================
 # IDE and Editor Files

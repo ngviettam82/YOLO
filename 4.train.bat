@@ -40,27 +40,56 @@ echo.
 
 REM Display training options
 echo [2/3] Training Configuration:
-echo   Model Selection: Pretrained (yolo11m) or Load from file
-echo   Training Mode: Fresh start or Resume from checkpoint
-echo   Epochs: 500 (optimized configuration)
-echo   Image Size: 832px (optimized configuration)
-echo   Batch Size: 16 (optimized for RTX 5080)
-echo   Learning Rate: 0.01 ^-^> 0.001 (optimized for stability)
+echo.
+echo Default Configuration:
+echo   Epochs: 500
+echo   Image Size: 640px
+echo   Batch Size: 8
+echo   Learning Rate: 0.001 ^-^> 0.0001
 echo   Patience: 50 epochs (early stopping)
-echo   Optimizer: AdamW (proven stable)
+echo   Optimizer: SGD (numerically stable)
+echo.
+echo You can customize these parameters, or press ENTER to use defaults.
 echo.
 
-REM Start training with interactive model selection
-echo [3/3] Starting training...
+setlocal enabledelayedexpansion
+
+REM Prompt for epochs
+set /p EPOCHS="Enter epochs (default 500): "
+if "!EPOCHS!"=="" set EPOCHS=500
+
+REM Prompt for image size
+set /p IMGSZ="Enter image size (default 640): "
+if "!IMGSZ!"=="" set IMGSZ=640
+
+REM Prompt for batch size
+set /p BATCH="Enter batch size (default 8): "
+if "!BATCH!"=="" set BATCH=8
+
+REM Prompt for learning rate
+set /p LR0="Enter initial learning rate (default 0.001): "
+if "!LR0!"=="" set LR0=0.001
+
+REM Prompt for patience
+set /p PATIENCE="Enter patience/early stopping epochs (default 50): "
+if "!PATIENCE!"=="" set PATIENCE=50
+
+echo.
+echo [3/3] Starting training with your configuration...
 echo This will take several hours depending on your dataset size...
 echo.
 echo You will be prompted to select:
 echo   1. Model Source: Pretrained (yolo11m) or Load file
 echo   2. Training Mode: Fresh start (epoch 1) or Resume checkpoint
 echo.
-echo Follow the prompts to get started...
+echo Configuration Summary:
+echo   Epochs: !EPOCHS!
+echo   Image Size: !IMGSZ!px
+echo   Batch Size: !BATCH!
+echo   Learning Rate: !LR0! ^-^> (final varies)
+echo   Patience: !PATIENCE! epochs
 echo.
-python scripts\train_optimized.py --data dataset/data.yaml --resume
+python scripts\train_optimized.py --data dataset/data.yaml --epochs !EPOCHS! --imgsz !IMGSZ! --batch !BATCH! --lr0 !LR0! --patience !PATIENCE!
 if errorlevel 1 (
     echo ERROR: Training failed!
     pause
