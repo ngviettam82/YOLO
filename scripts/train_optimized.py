@@ -271,7 +271,6 @@ class SimpleYOLOTrainer:
             'amp': True,         # Enable Mixed Precision for speed & memory
             'fraction': 1.0,     # Use all data
             'patience': patience, # Use parameter
-            'ema': True,         # Exponential moving average for stability
             
             # Validation and saving
             'val': True,
