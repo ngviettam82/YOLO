@@ -38,6 +38,7 @@ wheels/
 # Raw dataset images (user to provide)
 raw_dataset/*
 
+
 # Split dataset images (auto-generated)
 dataset/images/train/*
 dataset/images/val/*
@@ -57,6 +58,7 @@ dataset/data.yaml
 
 # Training runs and results
 runs/*
+scripts/runs/*
 
 # Pre-trained model weights (large files)
 models/*
@@ -69,6 +71,7 @@ models/*
 *.tflite
 *.mlmodel
 *_openvino_model/
+*.rar
 
 # ===================================================================
 # IDE and Editor Files

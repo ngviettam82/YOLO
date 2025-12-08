@@ -103,16 +103,40 @@ class DatasetSplitter:
         
         return train_images, val_images, test_images
     
-    def copy_images(self, images: List[Path], destination: Path) -> int:
-        """Copy images to destination folder"""
+    def copy_images(self, images: List[Path], destination: Path, copy_labels: bool = True) -> int:
+        """
+        Copy images to destination folder and optionally copy corresponding labels
+        
+        Args:
+            images: List of image paths to copy
+            destination: Destination directory for images
+            copy_labels: Whether to copy corresponding label files (default: True)
+        
+        Returns:
+            Number of images successfully copied
+        """
         destination.mkdir(parents=True, exist_ok=True)
         copied = 0
         
+        # Create labels directory if copying labels
+        if copy_labels:
+            labels_dir = destination.parent.parent / "labels" / destination.name
+            labels_dir.mkdir(parents=True, exist_ok=True)
+        
         for image in images:
             try:
+                # Copy image
                 dest_path = destination / image.name
                 shutil.copy2(image, dest_path)
                 copied += 1
+                
+                # Copy corresponding label file if it exists and copy_labels is True
+                if copy_labels:
+                    label_file = image.parent / f"{image.stem}.txt"
+                    if label_file.exists():
+                        label_dest = labels_dir / f"{image.stem}.txt"
+                        shutil.copy2(label_file, label_dest)
+                    
             except Exception as e:
                 logger.error(f"Error copying {image.name}: {e}")
         
@@ -146,25 +170,36 @@ class DatasetSplitter:
             dest_val = self.output_dir / "images" / "val"
             dest_test = self.output_dir / "images" / "test"
             
-            n_train = self.copy_images(train_images, dest_train)
-            n_val = self.copy_images(val_images, dest_val)
-            n_test = self.copy_images(test_images, dest_test)
+            # Copy train and val with labels, test without labels
+            logger.info(f"  {operation} train images and labels...")
+            n_train = self.copy_images(train_images, dest_train, copy_labels=True)
+            
+            logger.info(f"  {operation} val images and labels...")
+            n_val = self.copy_images(val_images, dest_val, copy_labels=True)
+            
+            logger.info(f"  {operation} test images (no labels)...")
+            n_test = self.copy_images(test_images, dest_test, copy_labels=False)
             
             logger.info(f"\nSuccessfully {operation.lower()}ed:")
             logger.info(f"  Train: {n_train} images to {dest_train}")
             logger.info(f"  Val:   {n_val} images to {dest_val}")
             logger.info(f"  Test:  {n_test} images to {dest_test}")
             
-            # Create placeholder label files
-            logger.info("\nCreating placeholder label directories...")
-            for label_dir in [
-                self.output_dir / "labels" / "train",
-                self.output_dir / "labels" / "val",
-                self.output_dir / "labels" / "test"
-            ]:
-                label_dir.mkdir(parents=True, exist_ok=True)
+            # Create label directories
+            logger.info("\nLabel directories:")
+            train_labels = self.output_dir / "labels" / "train"
+            val_labels = self.output_dir / "labels" / "val"
+            test_labels = self.output_dir / "labels" / "test"
             
-            logger.info("✅ Dataset split completed successfully!")
+            train_labels.mkdir(parents=True, exist_ok=True)
+            val_labels.mkdir(parents=True, exist_ok=True)
+            test_labels.mkdir(parents=True, exist_ok=True)
+            
+            logger.info(f"  Train labels: {train_labels}")
+            logger.info(f"  Val labels: {val_labels}")
+            logger.info(f"  Test labels: {test_labels} (empty - no labels copied)")
+            
+            logger.info("\n✅ Dataset split completed successfully!")
             return True
         
         except Exception as e:
