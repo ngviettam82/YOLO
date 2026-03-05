@@ -5,16 +5,9 @@ val: images/val
 test: images/test
 
 # Number of classes
-nc: 3
+nc: 2
 
 # Class names
 names:
-  0: class_0
-  1: class_1
-  2: class_2
-
-# Update class names above to match your object categories
-# Example:
-#   0: person
-#   1: car
-#   2: dog
+  0: fire
+  1: smoke

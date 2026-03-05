@@ -180,18 +180,18 @@ class AnnotationLabeling(LabelingTool):
                 logger.warning("   ⚠️  Label Studio install issue, trying to launch anyway...")
             
             # Set environment variables for large file uploads
+            os.environ['DATA_UPLOAD_MAX_NUMBER_FILES'] = '10000'
             os.environ['DJANGO_DATA_UPLOAD_MAX_NUMBER_FILES'] = '10000'
             os.environ['LABEL_STUDIO_DATA_UPLOAD_MAX_NUMBER_FILES'] = '10000'
-            os.environ['DJANGO_FILE_UPLOAD_MAX_MEMORY_SIZE'] = '5242880'
-            os.environ['DATA_UPLOAD_MAX_MEMORY_SIZE'] = '5242880'
-            os.environ['DJANGO_MIDDLEWARE_APPEND'] = 'django.middleware.security.SecurityMiddleware'
-            os.environ['CLIENT_MAX_BODY_SIZE'] = '100m'
-            os.environ['NGINX_CLIENT_MAX_BODY_SIZE'] = '100m'
+            os.environ['DJANGO_FILE_UPLOAD_MAX_MEMORY_SIZE'] = '52428800'
+            os.environ['DATA_UPLOAD_MAX_MEMORY_SIZE'] = '52428800'
+            os.environ['LABEL_STUDIO_DATA_UPLOAD_MAX_MEMORY_SIZE'] = '52428800'
+            os.environ['CLIENT_MAX_BODY_SIZE'] = '200m'
+            os.environ['NGINX_CLIENT_MAX_BODY_SIZE'] = '200m'
+            os.environ['UWSGI_HTTP_TIMEOUT'] = '600'
             
             # For large datasets (>500 images), add extra settings
             if self.image_count > 500:
-                os.environ['LABEL_STUDIO_DATA_UPLOAD_MAX_MEMORY_SIZE'] = '52428800'  # 50MB
-                os.environ['UWSGI_HTTP_TIMEOUT'] = '600'
                 os.environ['LABEL_STUDIO_WEB_LOCKED_UI'] = 'false'
             
             logger.info("\n🚀 Starting Label Studio server...")

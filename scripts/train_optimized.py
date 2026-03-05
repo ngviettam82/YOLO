@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-GPU-Optimized YOLO11m Fire Detection Training Script
-Simplified & Stable - Based on RTX 4070 Ti Super proven configuration
+GPU-Optimized YOLO11m Aerial Fire & Smoke Detection Training Script
+Optimized for small object detection from drone footage (100m altitude)
 Features:
 - Model selection: Pretrained (fresh) or Trained (file selection)
-- Simple, stable training configuration
-- Optimized for RTX 5080 (16GB VRAM)
+- Small object optimizations (high imgsz, tuned augmentation)
+- Optimized for RTX 5080 (16GB VRAM) at imgsz=1280
 """
 
 import os
@@ -186,22 +186,23 @@ class SimpleYOLOTrainer:
         return train_images, val_images
     
     def train(self, dataset_yaml, resume=False, checkpoint_path=None, 
-              epochs=500, imgsz=640, batch=8, lr0=0.001, patience=50):
-        """Train with stable configuration
+              epochs=800, imgsz=1280, batch=4, lr0=0.001, patience=120):
+        """Train with configuration optimized for aerial small-object fire/smoke detection
         
         Args:
             dataset_yaml: Path to dataset YAML
             resume: Whether to resume training from checkpoint
             checkpoint_path: Path to checkpoint file for resuming (if resume=True)
-            epochs: Number of training epochs (default: 500)
-            imgsz: Image size (default: 640)
-            batch: Batch size (default: 8)
+            epochs: Number of training epochs (default: 800)
+            imgsz: Image size (default: 1280 for small object detection)
+            batch: Batch size (default: 4, lower due to high imgsz)
             lr0: Initial learning rate (default: 0.001)
-            patience: Early stopping patience (default: 50)
+            patience: Early stopping patience (default: 120)
         """
         
         print(f"\n{'='*80}")
-        print(f"🚀 YOLO11m FIRE DETECTION TRAINING")
+        print(f"🚀 YOLO11m AERIAL FIRE & SMOKE DETECTION TRAINING")
+        print(f"   Optimized for small objects from drone @ 100m altitude")
         print(f"{'='*80}")
         
         # Validate dataset
@@ -229,65 +230,70 @@ class SimpleYOLOTrainer:
             torch.cuda.empty_cache()
             print(f"💾 GPU Memory cleared")
         
-        # Stable training configuration - NaN-resistant settings
+        # Aerial small-object optimized training configuration
         train_args = {
             'data': str(dataset_yaml),
             'epochs': epochs,
             'imgsz': imgsz,
             'batch': batch,
             'device': self.device,
-            'workers': 8,  # Reduced from 12
+            'workers': 8,
             'project': str(PROJECT_ROOT / 'runs'),
-            'name': f"train_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            'name': f"fire_smoke_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             
-            # Optimizer and learning rate - Conservative for NaN prevention
-            'optimizer': 'AdamW',  # Changed from AdamW (more stable)
-            'lr0': lr0,          # Use parameter
+            # Optimizer - AdamW with tuned LR for small object convergence
+            'optimizer': 'AdamW',
+            'lr0': lr0,
             'lrf': lr0 * 0.1,    # Final LR is 10% of initial
             'momentum': 0.937,
             'weight_decay': 0.0005,
-            'warmup_epochs': 10, # Increased from 5
+            'warmup_epochs': 10,
             'warmup_momentum': 0.8,
-            'warmup_bias_lr': 0.0,  # Set to 0 for safety
+            'warmup_bias_lr': 0.0,
             
-            # Conservative data augmentation
-            'hsv_h': 0.015,      # Hue augmentation
-            'hsv_s': 0.7,        # Saturation augmentation
-            'hsv_v': 0.4,        # Value augmentation
-            'degrees': 0.0,      # No rotation
-            'translate': 0.1,    # Keep translation minimal
-            'scale': 0.5,        # Standard scaling
-            'shear': 0.0,        # No shear
-            'perspective': 0.0,  # Disabled (was 0.0001)
-            'flipud': 0.0,
+            # === SMALL OBJECT AUGMENTATION (key for drone fire detection) ===
+            # HSV - tuned for fire (orange/red/yellow) and smoke (gray/white/dark)
+            'hsv_h': 0.02,       # Slight hue shift for fire color variation
+            'hsv_s': 0.8,        # High saturation variation (smoke is desaturated)
+            'hsv_v': 0.5,        # Brightness variation (day/night, shadows)
+            
+            # Geometric - full rotation for aerial/drone imagery
+            'degrees': 180.0,    # CRITICAL: drone approaches from any angle
+            'translate': 0.2,    # Moderate translation
+            'scale': 0.9,        # Wide scale range simulates 70m-200m altitude
+            'shear': 0.0,        # No shear (aerial perspective is top-down)
+            'perspective': 0.0,  # No perspective distortion for top-down
+            'flipud': 0.5,       # ENABLED: aerial views have no fixed up/down
             'fliplr': 0.5,       # Standard horizontal flip
-            'mosaic': 1.0,
-            'mixup': 0.1,        # Re-enable MixUp for better generalization
-            'copy_paste': 0.0,   # Disabled (was 0.3)
             
-            # Advanced settings - NaN prevention
-            'cos_lr': True,      # Use cosine LR schedule for smoother decay
-            'close_mosaic': 10,  # Reduced from 15
-            'amp': True,         # Enable Mixed Precision for speed & memory
+            # Mosaic + MixUp + Copy-Paste (critical for rare small objects)
+            'mosaic': 1.0,       # Always on - creates varied contexts for small fires
+            'mixup': 0.15,       # Moderate mixup for regularization
+            'copy_paste': 0.4,   # ENABLED: duplicates fire/smoke in different locations
+            
+            # Training schedule
+            'cos_lr': True,      # Cosine LR schedule for smooth convergence
+            'close_mosaic': 20,  # Disable mosaic last 20 epochs for fine-tuning
+            'amp': True,         # Mixed Precision for speed & memory savings
             'fraction': 1.0,     # Use all data
-            'patience': patience, # Use parameter
+            'patience': patience,
             
             # Validation and saving
             'val': True,
             'save': True,
-            'save_period': -1,
-            'cache': 'disk',
+            'save_period': 50,   # Save checkpoint every 50 epochs
+            'cache': 'disk',     # Cache to disk (imgsz=1280 images are large)
             'plots': True,
             'verbose': True,
             
-            # Stability settings
+            # Stability
             'rect': False,
             'resume': resume,
         }
         
         # Display configuration
-        print(f"\n⚙️  Training Configuration:")
-        print(f"   Image Size: {imgsz}px")
+        print(f"\n⚙️  Training Configuration (Small Object Optimized):")
+        print(f"   Image Size: {imgsz}px {'(⚡ HIGH RES for small objects)' if imgsz >= 1280 else ''}")
         print(f"   Batch Size: {batch}")
         print(f"   Epochs: {epochs}")
         print(f"   Device: {self.device}")
@@ -297,7 +303,11 @@ class SimpleYOLOTrainer:
         print(f"   Warmup: 10 epochs")
         print(f"   AMP (FP16): Enabled")
         print(f"   Early Stopping (Patience): {patience} epochs")
-        print(f"   ⚠️  These settings prioritize STABILITY over speed")
+        print(f"   Rotation: 180° (full aerial rotation)")
+        print(f"   Vertical Flip: Enabled (aerial top-down)")
+        print(f"   Copy-Paste: 0.4 (duplicates small fire/smoke objects)")
+        print(f"   Close Mosaic: last 20 epochs")
+        print(f"   ⚠️  High imgsz = more VRAM. Reduce batch if OOM.")
         
         print(f"\n{'='*80}")
         print(f"🏋️  Starting training...")
@@ -364,19 +374,19 @@ def main():
     """Main training function"""
     import argparse
     
-    parser = argparse.ArgumentParser(description='YOLO11m Fire Detection Training')
+    parser = argparse.ArgumentParser(description='YOLO11m Aerial Fire & Smoke Detection Training')
     parser.add_argument('--data', type=str, default='dataset/data.yaml',
                        help='Path to dataset YAML file')
-    parser.add_argument('--epochs', type=int, default=500,
-                       help='Number of training epochs (default: 500)')
-    parser.add_argument('--imgsz', type=int, default=640,
-                       help='Image size (default: 640)')
-    parser.add_argument('--batch', type=int, default=8,
-                       help='Batch size (default: 8)')
+    parser.add_argument('--epochs', type=int, default=800,
+                       help='Number of training epochs (default: 800)')
+    parser.add_argument('--imgsz', type=int, default=1280,
+                       help='Image size (default: 1280 for small object detection)')
+    parser.add_argument('--batch', type=int, default=4,
+                       help='Batch size (default: 4 at imgsz=1280)')
     parser.add_argument('--lr0', type=float, default=0.001,
                        help='Initial learning rate (default: 0.001)')
-    parser.add_argument('--patience', type=int, default=50,
-                       help='Early stopping patience in epochs (default: 50)')
+    parser.add_argument('--patience', type=int, default=120,
+                       help='Early stopping patience in epochs (default: 120)')
     parser.add_argument('--resume', action='store_true',
                        help='Resume from last checkpoint (skip training mode selection)')
     

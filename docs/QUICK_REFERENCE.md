@@ -10,10 +10,10 @@ Simply double-click these files in the project root **in order**:
 
 | Step | File | What It Does |
 |------|------|-------------|
-| 1 | `1.install.bat` | 🔧 Setup Python environment & install PyTorch |
-| 2 | `2.dataset.bat` | 📦 Split images into train/val/test |
-| 3 | `3.label.bat` | 🎯 Open LabelImg to annotate images |
-| 4 | `4.train.bat` | 🚂 Start training with optimized settings |
+| 1 | `1.install.bat` | Setup Python environment & install PyTorch |
+| 2 | `2.label.bat` | Open Label Studio to annotate images |
+| 3 | `3.dataset.bat` | Split images into train/val/test |
+| 4 | `4.train.bat` | Train with aerial fire/smoke optimized settings |
 
 **Total time:** ~15 minutes setup + 2-8 hours training
 
@@ -65,20 +65,18 @@ python scripts\split_dataset.py --train 0.8 --val 0.15 --test 0.05
 
 ### Quick Labeling (Double-Click)
 ```batch
-3.label.bat
+2.label.bat
 ```
 
-### Manual Labeling with LabelImg
+### Label Studio (Default)
 ```batch
 .venv\Scripts\activate.bat
-python scripts\label_images.py --tool labelimg
+python scripts\label_images.py --tool label-studio
 ```
 
-### Alternative Annotation Tools
+### Server-Based Import (Large Datasets)
 ```batch
-python scripts\label_images.py --tool label-studio
-python scripts\label_images.py --tool cvat
-python scripts\label_images.py --tool openlabeling
+AutoLabel\import_to_label_studio.bat
 ```
 
 ### Create Dataset Config
@@ -98,7 +96,7 @@ python scripts\label_images.py --config --num-classes 3
 ### Manual Training with Default Settings
 ```batch
 .venv\Scripts\activate.bat
-python scripts\train_optimized.py --data dataset/data.yaml --model yolo11m.pt --epochs 1000 --batch 64 --imgsz 640
+python scripts\train_optimized.py --data dataset/data.yaml --model yolo11m.pt --epochs 800 --batch 4 --imgsz 1280
 ```
 
 ### Custom Training Parameters
@@ -106,10 +104,10 @@ python scripts\train_optimized.py --data dataset/data.yaml --model yolo11m.pt --
 python scripts\train_optimized.py ^
   --data dataset/data.yaml ^
   --model yolo11m.pt ^
-  --epochs 500 ^
-  --batch 64 ^
-  --imgsz 640 ^
-  --patience 150 ^
+  --epochs 800 ^
+  --batch 4 ^
+  --imgsz 1280 ^
+  --patience 120 ^
   --device 0
 ```
 
@@ -129,11 +127,15 @@ python scripts\train_optimized.py --model yolo11x.pt  # Extra Large (most accura
 
 ### Training with Different Image Sizes
 ```batch
-python scripts\train_optimized.py --imgsz 416   # Small (fast)
-python scripts\train_optimized.py --imgsz 512   # Medium
-python scripts\train_optimized.py --imgsz 640   # Default (balanced)
-python scripts\train_optimized.py --imgsz 768   # Large
-python scripts\train_optimized.py --imgsz 1024  # Extra Large (slow, needs 24GB+ VRAM)
+python scripts\train_optimized.py --imgsz 640   # Fast (less VRAM, worse for small objects)
+python scripts\train_optimized.py --imgsz 1280  # Default (aerial fire/smoke optimized)
+```
+
+### SAHI Sliced Inference (Best for Drone Small Objects)
+```batch
+python scripts\inference_sahi.py --model runs\best.pt --source image.jpg --slice 640
+python scripts\inference_sahi.py --model runs\best.pt --source video.mp4 --slice 640
+python scripts\inference_sahi.py --model runs\best.pt --source folder/ --slice 640
 ```
 
 ---

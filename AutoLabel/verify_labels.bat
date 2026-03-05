@@ -9,7 +9,7 @@ echo ========================================
 echo.
 
 REM Navigate to project root (parent of AutoLabel folder)
-cd /d "%~dp0.."
+for %%I in ("%~dp0..") do cd /d "%%~fI"
 
 REM Check if virtual environment exists
 if not exist ".venv\Scripts\activate.bat" (

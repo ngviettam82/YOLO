@@ -71,71 +71,33 @@ python scripts\split_dataset.py --train 0.8 --val 0.15 --test 0.05
 
 ---
 
-## 🎯 Step 3: Label Images
+## Step 3: Label Images
 
-### Option 1: Double-Click (Easiest) ⭐
+### Option 1: Double-Click (Easiest)
 
-**Step 3:** Simply **double-click** `3.label.bat` in the project root.
+**Step 2:** Simply **double-click** `2.label.bat` in the project root.
 
 This will:
-1. Verify training images exist
-2. Launch LabelImg annotation tool
-3. Save annotations as YOLO format
+1. Launch Label Studio at http://localhost:8080
+2. You create a project and upload/import images
+3. Draw bounding boxes and assign labels (fire, smoke)
+4. Export in YOLO format
 
-**Time:** Depends on dataset size
-
-### Option 2: Command Line
-
+**For large datasets (200+ images):** Use server-based import:
 ```batch
-3.label.bat
+AutoLabel\import_to_label_studio.bat
 ```
+This avoids the `DATA_UPLOAD_MAX_NUMBER_FILES` upload limit.
 
-Or manually:
-```batch
-.venv\Scripts\activate.bat
-python scripts\label_images.py --tool labelimg
-```
+### Annotation Tool
 
-### Annotation Tools Available
-
-**LabelImg (Default - Recommended)**
-```batch
-python scripts\label_images.py --tool labelimg
-```
-- Desktop-based, fast
-- Creates YOLO format labels automatically
-- Works offline
-
-**Label Studio (Web-based)**
+**Label Studio (Default - Web-based)**
 ```batch
 python scripts\label_images.py --tool label-studio
 ```
 - Modern web interface
-- Team collaboration ready
-- More features than LabelImg
-
-**CVAT (Professional)**
-```batch
-python scripts\label_images.py --tool cvat
-```
-- Professional annotation platform
-- Advanced features
-- Best for large teams
-
-### LabelImg Quick Guide
-
-1. **Load directory**: File → Open Dir → select `dataset/images/train`
-2. **Draw box**: Click "Create RectBox" or press `W`
-3. **Name class**: Type class name (e.g., "person", "car")
-4. **Save**: Press `Ctrl+S` or click Save
-5. **Next image**: Press `D` or click Next
-
-**Key shortcuts:**
-- `W` - Draw box
-- `D` - Next image
-- `A` - Previous image
-- `Ctrl+S` - Save
-- `Ctrl+R` - Change output dir
+- Server-based import for large datasets
+- Export in YOLO format
 
 ---
 
@@ -166,20 +128,20 @@ train: images/train
 val: images/val
 test: images/test
 
-nc: 3  # number of classes
-names: ['class1', 'class2', 'class3']  # class names
+nc: 2  # number of classes
+names: ['fire', 'smoke']  # class names
 ```
 
-Example for person detection:
+Custom examples:
 ```yaml
 nc: 1
-names: ['person']
+names: ['fire']
 ```
 
 Example for vehicle detection:
 ```yaml
 nc: 3
-names: ['car', 'truck', 'bus']
+names: ['fire', 'smoke', 'vehicle']
 ```
 
 ---

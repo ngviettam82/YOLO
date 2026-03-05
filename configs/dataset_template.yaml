@@ -28,16 +28,12 @@ val: ../dataset/val/images
 test: ../dataset/test/images
 
 # Number of classes
-nc: 3
+nc: 2
 
-# Class names (customize for your specific task)
+# Class names (fire and smoke detection from aerial/drone imagery)
 names:
-  0: class1
-  1: class2
-  2: class3
-  # Add more classes as needed:
-  # 3: class4
-  # 4: class5
+  0: fire
+  1: smoke
 
 # Additional information (optional)
 # download: https://your-dataset-url.com  # Dataset download URL

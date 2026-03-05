@@ -1,176 +1,142 @@
-# Quick Start - Step-by-Step Guide
+# Quick Start - Aerial Fire & Smoke Detection
 
-**Before you start:** Read `README.md` for project overview
+## 4-Step Pipeline
 
-## Follow These 4 Steps In Order
-
-Simply double-click these files **one after another**:
+Double-click these files **in order**:
 
 ```
-Step 1: 1.install.bat          (Setup - ~10 minutes)
+Step 1: 1.install.bat          (Setup environment)
         ↓
-Step 2: 2.dataset.bat          (Dataset prep - ~5 minutes)
+Step 2: 2.label.bat            (Label images in Label Studio)
         ↓
-Step 3: 3.label.bat            (Labeling - ~30 min - 2 hours)
+Step 3: 3.dataset.bat          (Split into train/val/test)
         ↓
-Step 4: 4.train.bat            (Training - 2-8 hours)
+Step 4: 4.train.bat            (Train YOLO model)
 ```
 
 ---
 
-## 📋 What Each Step Does
+## Before You Start
 
-### Step 1️⃣ - `1.install.bat` (Setup Environment)
-**Run this FIRST to set up your system**
+1. Place your images in `raw_dataset/` folder
+2. Make sure you have Python 3.10 installed
 
-✅ Checks for Python 3.10  
-✅ Creates virtual environment  
-✅ Installs PyTorch with CUDA 12.8  
-✅ Installs all dependencies  
-✅ Verifies everything works  
+---
+
+## Step 1 - `1.install.bat` (Setup)
+
+Creates virtual environment, installs PyTorch + CUDA, all dependencies.
 
 **Time:** ~10-15 minutes
 
 ---
 
-### Step 2️⃣ - `2.dataset.bat` (Prepare Dataset)
-**Run this AFTER Step 1**
+## Step 2 - `2.label.bat` (Label Images)
 
-✅ Counts images in `raw_dataset/` folder  
-✅ Splits into train (70%) / val (20%) / test (10%)  
-✅ Creates `dataset/` folder structure  
-✅ Generates `data.yaml` config file  
+Opens Label Studio at http://localhost:8080 for image annotation.
 
-**Before running:** Add your images to `raw_dataset/` folder
+**What to do:**
+1. Create a project in Label Studio
+2. Set labeling interface (use fire/smoke rectangle labels)
+3. Upload images or import via server
+4. Draw bounding boxes around fire and smoke
+5. Export in YOLO format
+
+**For large datasets (200+ images):** Use server-based import instead:
+```
+AutoLabel\run_auto_label.bat       ← Auto-label with pre-trained YOLO
+AutoLabel\import_to_label_studio.bat  ← Import to Label Studio via HTTP
+```
+This avoids the `DATA_UPLOAD_MAX_NUMBER_FILES` Django limit.
+
+**Time:** 30 min - 2 hours depending on dataset size
+
+---
+
+## Step 3 - `3.dataset.bat` (Prepare Dataset)
+
+Splits `raw_dataset/` into train (70%) / val (20%) / test (10%).
+
+**Before running:** Ensure your labeled .txt files are alongside images in `raw_dataset/`.
 
 **Time:** ~1-5 minutes
 
 ---
 
-### Step 3️⃣ - `3.label.bat` (Label Images)
-**Run this AFTER Step 2**
+## Step 4 - `4.train.bat` (Train Model)
 
-✅ Launches LabelImg annotation tool  
-✅ Opens training images for labeling  
-✅ Saves annotations automatically  
+Trains YOLO11m optimized for aerial fire/smoke detection.
 
-**What to do:** Draw bounding boxes around objects and assign class names
+**Default configuration (optimized for drone @ 100m):**
+- Image Size: 1280px (preserves small objects)
+- Batch Size: 4 (high res = more VRAM)
+- Epochs: 800 with early stopping at 120
+- Augmentation: 180° rotation, vertical flip, copy-paste (aerial-optimized)
 
-**Time:** Depends on your dataset (usually 30 min - 2 hours)
-
----
-
-### Step 4️⃣ - `4.train.bat` (Train Model)
-**Run this AFTER Step 3**
-
-✅ Verifies dataset is ready  
-✅ Starts training with optimized settings  
-✅ Saves best model to `runs/train_xxx/weights/best.pt`  
-✅ Shows training progress in console  
-
-**Settings:** 1000 epochs, batch size 64, image size 640px
-
-**Time:** 2-8 hours depending on dataset size
+**Time:** 2-8 hours depending on dataset and GPU
 
 ---
 
-## 📁 Folder Setup Before Running
+## After Training
 
-### Create `raw_dataset/` Folder
-
-Before running Step 2, create a folder called `raw_dataset/` and add your images:
-
+### Standard inference
+```batch
+python scripts\inference.py --model runs\fire_smoke_xxx\weights\best.pt --source image.jpg
 ```
-YOLO/
-└── raw_dataset/              ← Create this folder
-    ├── image1.jpg            ← Add your images here
-    ├── image2.jpg
-    ├── image3.jpg
-    └── ...
+
+### SAHI sliced inference (best for small objects from drone)
+```batch
+pip install sahi
+python scripts\inference_sahi.py --model runs\fire_smoke_xxx\weights\best.pt --source image.jpg
 ```
 
 ---
 
-## ✅ Verification Checklist
+## Optional: Auto-Label with Pre-trained YOLO
 
-- [ ] Python 3.10 installed and in PATH
-- [ ] Created `raw_dataset/` folder  
-- [ ] Added images to `raw_dataset/`
-- [ ] Can see `1.install.bat` in file explorer
-- [ ] Can see `2.dataset.bat` in file explorer
-- [ ] Can see `3.label.bat` in file explorer
-- [ ] Can see `4.train.bat` in file explorer
-
----
-
-## 🆘 Troubleshooting
-
-### Step 1 - Python 3.10 Not Found
-
-**Error:** `ERROR: Python 3.10 not found!`
-
-**Solution:**
-1. Download Python 3.10: https://www.python.org/downloads/release/python-3100/
-2. Run the installer
-3. **IMPORTANT:** Check "Add Python to PATH" during installation
-4. Restart your computer
-5. Try Step 1 again
-
-### Step 2 - No Images Found
-
-**Error:** `ERROR: No images found in raw_dataset/`
-
-**Solution:**
-1. Create `raw_dataset/` folder in project root
-2. Add your images (jpg, png, etc.) to this folder
-3. Run Step 2 again
-
-### Step 3 - LabelImg Won't Open
-
-**Error:** Annotation tool doesn't launch
-
-**Solution:**
-1. Ensure Step 1 and Step 2 completed successfully
-2. Check that images exist in `dataset/images/train/`
-3. Try running Step 3 again
-
-### Step 4 - CUDA Out of Memory
-
-**Error:** Training crashes with memory error
-
-**Solution:**
-1. Reduce batch size in Step 4
-2. Or reduce image size
-3. Or use smaller model size
-
-See `docs/TRAINING_GUIDE.md` for detailed options
-
----
-
-## 📚 Detailed Documentation
-
-For more information on any topic:
-
-- **`README.md`** - Project overview & features
-- **`docs/INSTALLATION.md`** - Installation troubleshooting
-- **`docs/DATASET_GUIDE.md`** - Dataset preparation details
-- **`docs/TRAINING_GUIDE.md`** - Training tips & advanced settings
-- **`docs/QUICK_REFERENCE.md`** - All commands reference
-- **`docs/RTX5080_OPTIMIZED.md`** - GPU optimization
-- **`docs/LABELING_TROUBLESHOOTING.md`** - Labeling tool help
-
----
-
-## 💡 Optional: Auto-Label Images (Skip Step 3)
-
-Don't want to label manually? Use a pre-trained YOLO:
+Skip manual labeling for initial labels:
 
 ```batch
-cd AutoLabel
-run_auto_label.bat
+AutoLabel\run_auto_label.bat          ← Auto-label images
+AutoLabel\verify_labels.bat           ← Verify quality
+AutoLabel\import_to_label_studio.bat  ← Review/edit in Label Studio
 ```
 
-**See `AutoLabel/QUICKSTART.md` for details.**
+See `AutoLabel/README.md` for details.
+
+---
+
+## Troubleshooting
+
+### "DATA_UPLOAD_MAX_NUMBER_FILES" error in Label Studio
+Use the server-based import workflow instead of direct file upload:
+```
+AutoLabel\import_to_label_studio.bat
+```
+
+### "There was an issue loading URL" in Label Studio
+The image server is not running or started from the wrong directory.
+Make sure the image server window is open and serving from the correct project folder.
+
+### CUDA Out of Memory
+Reduce batch size: use `--batch 2` or `--batch 1` at imgsz=1280.
+
+### Training NaN / Loss Explodes
+Reduce learning rate: use `--lr0 0.0005`.
+
+---
+
+## Documentation
+
+| Topic | File |
+|-------|------|
+| Project overview | `README.md` |
+| Installation details | `docs/INSTALLATION.md` |
+| Dataset preparation | `docs/DATASET_GUIDE.md` |
+| Training guide | `docs/TRAINING_GUIDE.md` |
+| Command reference | `docs/QUICK_REFERENCE.md` |
+| Labeling issues | `docs/LABELING_TROUBLESHOOTING.md` |
+| Auto-labeling | `AutoLabel/README.md` |
 
 ---
 

@@ -15,7 +15,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.append(str(PROJECT_ROOT))
 
 
-def run_inference(model_path, source, conf=0.25, iou=0.45, img_size=832, 
+def run_inference(model_path, source, conf=0.2, iou=0.45, img_size=1280, 
                  save=True, show=False, device=''):
     """
     Run YOLO inference on various sources
@@ -147,12 +147,12 @@ def main():
                        help='Path to trained model (.pt file)')
     parser.add_argument('--source', type=str, required=True,
                        help='Input source (image/video/folder path or camera index)')
-    parser.add_argument('--conf', type=float, default=0.25,
-                       help='Confidence threshold (default: 0.25)')
+    parser.add_argument('--conf', type=float, default=0.2,
+                       help='Confidence threshold (default: 0.2, lower for small objects)')
     parser.add_argument('--iou', type=float, default=0.45,
                        help='IOU threshold for NMS (default: 0.45)')
-    parser.add_argument('--imgsz', type=int, default=832,
-                       help='Image size for inference (default: 832)')
+    parser.add_argument('--imgsz', type=int, default=1280,
+                       help='Image size for inference (default: 1280 for drone)')
     parser.add_argument('--save', action='store_true', default=True,
                        help='Save results (default: True)')
     parser.add_argument('--show', action='store_true',

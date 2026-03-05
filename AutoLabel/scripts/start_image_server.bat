@@ -8,8 +8,8 @@ echo   Image Server for Label Studio
 echo ============================================================================
 echo.
 
-REM Navigate to project root
-cd /d "%~dp0.."
+REM Navigate to project root (AutoLabel/scripts -> AutoLabel -> YOLO)
+for %%I in ("%~dp0..\..") do cd /d "%%~fI"
 
 REM Check if virtual environment exists
 if not exist ".venv\Scripts\activate.bat" (

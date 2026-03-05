@@ -142,19 +142,23 @@ def run_server():
 
 
 if __name__ == "__main__":
-    # Find the most recent label_studio_* project folder
-    script_dir = Path(__file__).parent  # AutoLabel/scripts
-    project_root = script_dir.parent.parent  # Go up to YOLO root
-    
-    # Find the most recent label_studio_* directory
-    project_dirs = list(project_root.glob("label_studio_*"))
-    if not project_dirs:
-        print("❌ ERROR: No label_studio_* project directory found!")
-        print(f"Expected to find in: {project_root}")
-        sys.exit(1)
-    
-    # Get the most recent one
-    project_dir = max(project_dirs, key=lambda p: p.stat().st_mtime)
+    script_dir = Path(__file__).resolve().parent
+
+    # Detect context: are we already inside a label_studio_* directory (copied there)?
+    if script_dir.name.startswith("label_studio_"):
+        project_dir = script_dir
+    elif Path.cwd().name.startswith("label_studio_"):
+        project_dir = Path.cwd()
+    else:
+        # Running from original location (AutoLabel/scripts/) — find project dir
+        project_root = script_dir.parent.parent  # AutoLabel/scripts -> AutoLabel -> YOLO
+        project_dirs = list(project_root.glob("label_studio_*"))
+        if not project_dirs:
+            print("❌ ERROR: No label_studio_* project directory found!")
+            print(f"Expected to find in: {project_root}")
+            sys.exit(1)
+        project_dir = max(project_dirs, key=lambda p: p.stat().st_mtime)
+
     os.chdir(project_dir)
     
     print(f"📁 Working directory: {os.getcwd()}")

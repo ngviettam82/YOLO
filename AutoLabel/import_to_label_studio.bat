@@ -7,10 +7,16 @@ echo   YOLO Label Studio - Complete Workflow
 echo ============================================================================
 echo.
 
-cd /d "%~dp0.."
+REM Resolve YOLO project root (parent of AutoLabel folder) as absolute path
+for %%I in ("%~dp0..") do set "PROJECT_ROOT=%%~fI"
+echo Script location: %~dp0
+echo Project root: !PROJECT_ROOT!
+
+cd /d "!PROJECT_ROOT!"
+echo Working directory: %CD%
 
 if not exist ".venv\Scripts\activate.bat" (
-    echo ERROR: Virtual environment not found!
+    echo ERROR: Virtual environment not found at !PROJECT_ROOT!
     echo Please run: python -m venv .venv
     pause
     exit /b 1
@@ -46,24 +52,28 @@ echo OK - Data imported!
 echo.
 
 REM Find the project directory
-for /d %%D in (label_studio_*) do (
-    set "PROJECT_DIR=%%D"
+for /d %%D in ("!PROJECT_ROOT!\label_studio_*") do (
+    set "PROJECT_DIR=%%~fD"
 )
 
 if not defined PROJECT_DIR (
-    echo ERROR: Project folder not found!
+    echo.
+    echo ERROR: No label_studio_* project directory found!
+    echo Expected to find in: !PROJECT_ROOT!
+    echo.
+    echo Make sure STEP 1 ^(import^) completed successfully.
     pause
     deactivate
     exit /b 1
 )
 
-REM STEP 2: Start image server in separate window
+REM STEP 2: Start image server in separate window (must run from project dir so /images/ path resolves)
 echo ============================================================================
 echo STEP 2: Starting Image Server in separate window...
 echo ============================================================================
 echo.
 
-start "Image Server" cmd /c "cd /d "%CD%" && python AutoLabel\scripts\serve_images.py & pause"
+start "Image Server" cmd /c "cd /d "!PROJECT_DIR!" && python serve_images.py & pause"
 
 echo Image server started in separate window!
 echo Waiting 3 seconds...

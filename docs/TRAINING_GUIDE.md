@@ -1,10 +1,10 @@
 # Training Guide
 
-Train your YOLO model with optimized settings for RTX 5080.
+Train YOLO11m for aerial fire & smoke detection (drone @ 100m altitude).
 
 ---
 
-## 📋 Overview
+## Overview
 
 This guide covers:
 1. Starting training
@@ -25,10 +25,10 @@ The script will:
 2. Activate virtual environment
 3. Start training with optimized settings:
    - Model: yolo11m.pt
-   - Epochs: 1000
-   - Batch: 64
-   - Image size: 640px
-   - Learning rate: auto-optimized
+   - Epochs: 800 (early stopping at 120)
+   - Batch: 4
+   - Image size: 1280px (preserves small fire/smoke objects)
+   - Augmentation: 180° rotation, vertical flip, copy-paste (aerial-optimized)
 
 **Time:** 2-8 hours depending on dataset size
 
@@ -41,7 +41,7 @@ The script will:
 Or manually:
 ```batch
 .venv\Scripts\activate.bat
-python scripts\train_optimized.py --data dataset/data.yaml --model yolo11m.pt --epochs 1000 --batch 64 --imgsz 640
+python scripts\train_optimized.py --data dataset/data.yaml --model yolo11m.pt --epochs 800 --batch 4 --imgsz 1280
 ```
 
 ### Custom Training Parameters
@@ -50,20 +50,20 @@ python scripts\train_optimized.py --data dataset/data.yaml --model yolo11m.pt --
 python scripts\train_optimized.py ^
   --data dataset/data.yaml ^
   --model yolo11m.pt ^
-  --epochs 500 ^
-  --batch 64 ^
-  --imgsz 640 ^
-  --patience 150 ^
+  --epochs 800 ^
+  --batch 4 ^
+  --imgsz 1280 ^
+  --patience 120 ^
   --device 0
 ```
 
 **Common parameters:**
-- `--epochs`: Number of epochs (default: 1000)
-- `--batch`: Batch size (default: 64, max for RTX 5080)
-- `--imgsz`: Image size in pixels (default: 640, options: 416, 512, 640, 768, 1024)
-- `--patience`: Early stopping patience (default: 150)
-- `--device`: GPU device ID (default: 0, use -1 for CPU)
-- `--resume`: Resume from last checkpoint (automatic)
+- `--epochs`: Number of epochs (default: 800)
+- `--batch`: Batch size (default: 4 at imgsz=1280)
+- `--imgsz`: Image size in pixels (default: 1280 for aerial small objects)
+- `--patience`: Early stopping patience (default: 120)
+- `--device`: GPU device ID (default: 0)
+- `--resume`: Resume from last checkpoint
 
 ---
 
@@ -210,11 +210,11 @@ python scripts\export_model.py --model runs/train_001/weights/best.pt --formats 
 **Solution:**
 1. Reduce batch size:
    ```batch
-   python scripts\train_optimized.py --batch 32
+   python scripts\train_optimized.py --batch 2
    ```
 2. Reduce image size:
    ```batch
-   python scripts\train_optimized.py --imgsz 512
+   python scripts\train_optimized.py --imgsz 640
    ```
 3. Use smaller model:
    ```batch

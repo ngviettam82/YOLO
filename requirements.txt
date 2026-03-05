@@ -18,6 +18,9 @@ ultralytics                     # YOLOv11 framework
 # Computer Vision
 opencv-python                   # Image/video processing
 
+# SAHI - Slicing Aided Hyper Inference (critical for small object detection from drones)
+sahi                            # Sliced inference for aerial/satellite imagery
+
 # Data Processing
 pandas                          # Data analysis
 PyYAML                          # YAML configuration files

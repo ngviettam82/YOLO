@@ -301,30 +301,61 @@ Steps:
                 IMAGES_DIR = self.project_dir / "images"
                 
                 class ImageHandler(http.server.SimpleHTTPRequestHandler):
-                    def do_GET(self):
-                        if self.path.startswith("/images/"):
-                            filename = unquote(self.path[8:])
+                    def end_headers(self_inner):
+                        self_inner.send_header('Access-Control-Allow-Origin', '*')
+                        self_inner.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+                        self_inner.send_header('Access-Control-Allow-Headers', 'Content-type')
+                        self_inner.send_header('Cache-Control', 'public, max-age=86400')
+                        super().end_headers()
+                    
+                    def do_OPTIONS(self_inner):
+                        self_inner.send_response(200)
+                        self_inner.send_header('Access-Control-Allow-Origin', '*')
+                        self_inner.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+                        self_inner.send_header('Access-Control-Allow-Headers', 'Content-type')
+                        self_inner.send_header('Content-Length', '0')
+                        self_inner.end_headers()
+                    
+                    def do_GET(self_inner):
+                        if self_inner.path.startswith("/images/"):
+                            filename = unquote(self_inner.path[8:])
+                            # Security: prevent directory traversal
+                            if '..' in filename:
+                                self_inner.send_error(403, "Access denied")
+                                return
                             filepath = IMAGES_DIR / filename
                             
                             if filepath.exists() and filepath.is_file():
                                 try:
+                                    import mimetypes
+                                    mime_type, _ = mimetypes.guess_type(str(filepath))
+                                    if mime_type is None:
+                                        mime_type = 'application/octet-stream'
                                     with open(filepath, 'rb') as f:
-                                        self.send_response(200)
-                                        self.send_header('Content-type', 'image/jpeg')
-                                        self.send_header('Content-Length', filepath.stat().st_size)
-                                        self.end_headers()
-                                        self.wfile.write(f.read())
-                                except Exception as e:
-                                    self.send_response(500)
-                                    self.end_headers()
+                                        data = f.read()
+                                    self_inner.send_response(200)
+                                    self_inner.send_header('Content-type', mime_type)
+                                    self_inner.send_header('Content-Length', len(data))
+                                    self_inner.end_headers()
+                                    self_inner.wfile.write(data)
+                                except Exception:
+                                    self_inner.send_response(500)
+                                    self_inner.end_headers()
                             else:
-                                self.send_response(404)
-                                self.end_headers()
+                                self_inner.send_response(404)
+                                self_inner.end_headers()
                         else:
-                            self.send_response(404)
-                            self.end_headers()
+                            self_inner.send_response(404)
+                            self_inner.end_headers()
+                    
+                    def log_message(self_inner, format, *args):
+                        pass
                 
-                with socketserver.TCPServer(("", PORT), ImageHandler) as httpd:
+                class ThreadingServer(socketserver.ThreadingTCPServer):
+                    allow_reuse_address = True
+                    daemon_threads = True
+                
+                with ThreadingServer(("", PORT), ImageHandler) as httpd:
                     print(f"\n✅ Image server started on http://localhost:{PORT}")
                     print(f"📁 Serving images from: {IMAGES_DIR}")
                     print(f"⚠️  Keep this window open while using Label Studio!\n")

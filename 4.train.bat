@@ -39,40 +39,41 @@ echo Dataset config found: dataset/data.yaml
 echo.
 
 REM Display training options
-echo [2/3] Training Configuration:
+echo [2/3] Training Configuration (Aerial Fire/Smoke Detection):
 echo.
 echo Default Configuration:
-echo   Epochs: 500
-echo   Image Size: 640px
-echo   Batch Size: 8
+echo   Epochs: 800
+echo   Image Size: 1280px (high-res for small objects from drone)
+echo   Batch Size: 4 (lower due to high imgsz)
 echo   Learning Rate: 0.001 ^-^> 0.0001
-echo   Patience: 50 epochs (early stopping)
-echo   Optimizer: SGD (numerically stable)
+echo   Patience: 120 epochs (early stopping)
+echo   Optimizer: AdamW
 echo.
+echo NOTE: imgsz=1280 uses ~4x more VRAM than 640. Reduce batch if OOM.
 echo You can customize these parameters, or press ENTER to use defaults.
 echo.
 
 setlocal enabledelayedexpansion
 
 REM Prompt for epochs
-set /p EPOCHS="Enter epochs (default 500): "
-if "!EPOCHS!"=="" set EPOCHS=500
+set /p EPOCHS="Enter epochs (default 800): "
+if "!EPOCHS!"=="" set EPOCHS=800
 
 REM Prompt for image size
-set /p IMGSZ="Enter image size (default 640): "
-if "!IMGSZ!"=="" set IMGSZ=640
+set /p IMGSZ="Enter image size (default 1280, recommended for drone): "
+if "!IMGSZ!"=="" set IMGSZ=1280
 
 REM Prompt for batch size
-set /p BATCH="Enter batch size (default 8): "
-if "!BATCH!"=="" set BATCH=8
+set /p BATCH="Enter batch size (default 4 at imgsz=1280): "
+if "!BATCH!"=="" set BATCH=4
 
 REM Prompt for learning rate
 set /p LR0="Enter initial learning rate (default 0.001): "
 if "!LR0!"=="" set LR0=0.001
 
 REM Prompt for patience
-set /p PATIENCE="Enter patience/early stopping epochs (default 50): "
-if "!PATIENCE!"=="" set PATIENCE=50
+set /p PATIENCE="Enter patience/early stopping epochs (default 120): "
+if "!PATIENCE!"=="" set PATIENCE=120
 
 echo.
 echo [3/3] Starting training with your configuration...

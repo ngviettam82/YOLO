@@ -4,7 +4,74 @@
 
 ---
 
-## 🔴 Error: "cannot import name 'APP' from 'labelImg.labelImg'"
+## Error: "DATA_UPLOAD_MAX_NUMBER_FILES exceeded"
+
+### Problem
+When uploading images directly to Label Studio via `2.label.bat`, Django rejects the upload:
+```
+The number of files exceeded settings.DATA_UPLOAD_MAX_NUMBER_FILES
+```
+
+### Cause
+Label Studio uses Django which limits file uploads to ~1000 files by default. Your dataset has more files than this limit.
+
+### Solution (Recommended): Use server-based import
+Instead of uploading files directly, use the HTTP server-based import:
+```batch
+AutoLabel\import_to_label_studio.bat
+```
+This serves images via HTTP (no upload limit) and generates a `tasks.json` that Label Studio imports by URL reference.
+
+### Alternative: Upload in small batches
+If you must use direct upload:
+1. Open Label Studio at http://localhost:8080
+2. Create a project
+3. Upload images in batches of 100 (drag & drop)
+4. Wait for each batch to complete before uploading the next
+
+---
+
+## Error: "There was an issue loading URL from $image value"
+
+### Problem
+After importing `tasks.json`, Label Studio cannot load images from `http://localhost:8000/images/...`
+
+### Causes & Solutions
+
+**1. Image server not running**
+The HTTP image server must be running in a separate window while using Label Studio.
+```batch
+cd label_studio_YOUR_PROJECT_NAME
+python serve_images.py
+```
+
+**2. Image server started from wrong directory**
+The server must run from inside the `label_studio_*` project folder (where the `images/` subfolder is), not from the YOLO project root.
+```batch
+cd label_studio_YOLO_Review_raw_dataset
+python serve_images.py
+```
+
+**3. CORS blocked**
+Label Studio requires the image server to send CORS headers. The `serve_images.py` included in each project folder already has CORS headers. If you use a different server, ensure it sends:
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, OPTIONS
+```
+
+**4. URL mismatch (http vs https)**
+Label Studio's scheme must match the image server scheme. If Label Studio runs on `http://localhost:8080`, image URLs must also use `http://` (not `https://`).
+
+**5. Test the image server directly**
+Open your browser and navigate to an image URL from tasks.json:
+```
+http://localhost:8000/images/YOUR_IMAGE_NAME.jpg
+```
+If the image loads in the browser but not in Label Studio, it's a CORS issue.
+
+---
+
+## Error: "cannot import name 'APP' from 'labelImg.labelImg'"
 
 ### Problem
 LabelImg fails with error: `cannot import name 'APP' from 'labelImg.labelImg'`
