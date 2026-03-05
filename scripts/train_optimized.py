@@ -186,7 +186,7 @@ class SimpleYOLOTrainer:
         return train_images, val_images
     
     def train(self, dataset_yaml, resume=False, checkpoint_path=None, 
-              epochs=800, imgsz=1280, batch=4, lr0=0.001, patience=120):
+              epochs=800, imgsz=1280, batch=4, lr0=0.001, patience=120, overfit=False):
         """Train with configuration optimized for aerial small-object fire/smoke detection
         
         Args:
@@ -198,6 +198,7 @@ class SimpleYOLOTrainer:
             batch: Batch size (default: 4, lower due to high imgsz)
             lr0: Initial learning rate (default: 0.001)
             patience: Early stopping patience (default: 120)
+            overfit: Enable overfit mode — disables augmentation & regularization (default: False)
         """
         
         print(f"\n{'='*80}")
@@ -230,6 +231,11 @@ class SimpleYOLOTrainer:
             torch.cuda.empty_cache()
             print(f"💾 GPU Memory cleared")
         
+        if overfit:
+            print(f"\n🎯 OVERFIT MODE ENABLED")
+            print(f"   All augmentation DISABLED — model will memorize training data")
+            print(f"   Perfect for CosysAirSim demo with known scenes\n")
+
         # Aerial small-object optimized training configuration
         train_args = {
             'data': str(dataset_yaml),
@@ -239,44 +245,39 @@ class SimpleYOLOTrainer:
             'device': self.device,
             'workers': 8,
             'project': str(PROJECT_ROOT / 'runs'),
-            'name': f"fire_smoke_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            'name': f"fire_smoke_{'overfit_' if overfit else ''}{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             
-            # Optimizer - AdamW with tuned LR for small object convergence
+            # Optimizer
             'optimizer': 'AdamW',
-            'lr0': lr0,
-            'lrf': lr0 * 0.1,    # Final LR is 10% of initial
+            'lr0': lr0 if not overfit else 0.01,
+            'lrf': (lr0 * 0.1) if not overfit else 0.01,
             'momentum': 0.937,
-            'weight_decay': 0.0005,
-            'warmup_epochs': 10,
+            'weight_decay': 0.0005 if not overfit else 0.0,
+            'warmup_epochs': 10 if not overfit else 3,
             'warmup_momentum': 0.8,
             'warmup_bias_lr': 0.0,
             
-            # === SMALL OBJECT AUGMENTATION (key for drone fire detection) ===
-            # HSV - tuned for fire (orange/red/yellow) and smoke (gray/white/dark)
-            'hsv_h': 0.02,       # Slight hue shift for fire color variation
-            'hsv_s': 0.8,        # High saturation variation (smoke is desaturated)
-            'hsv_v': 0.5,        # Brightness variation (day/night, shadows)
-            
-            # Geometric - full rotation for aerial/drone imagery
-            'degrees': 180.0,    # CRITICAL: drone approaches from any angle
-            'translate': 0.2,    # Moderate translation
-            'scale': 0.9,        # Wide scale range simulates 70m-200m altitude
-            'shear': 0.0,        # No shear (aerial perspective is top-down)
-            'perspective': 0.0,  # No perspective distortion for top-down
-            'flipud': 0.5,       # ENABLED: aerial views have no fixed up/down
-            'fliplr': 0.5,       # Standard horizontal flip
-            
-            # Mosaic + MixUp + Copy-Paste (critical for rare small objects)
-            'mosaic': 1.0,       # Always on - creates varied contexts for small fires
-            'mixup': 0.15,       # Moderate mixup for regularization
-            'copy_paste': 0.4,   # ENABLED: duplicates fire/smoke in different locations
+            # === AUGMENTATION ===
+            'hsv_h': 0.02 if not overfit else 0.0,
+            'hsv_s': 0.8 if not overfit else 0.0,
+            'hsv_v': 0.5 if not overfit else 0.0,
+            'degrees': 180.0 if not overfit else 0.0,
+            'translate': 0.2 if not overfit else 0.0,
+            'scale': 0.9 if not overfit else 0.0,
+            'shear': 0.0,
+            'perspective': 0.0,
+            'flipud': 0.5 if not overfit else 0.0,
+            'fliplr': 0.5 if not overfit else 0.0,
+            'mosaic': 1.0 if not overfit else 0.0,
+            'mixup': 0.15 if not overfit else 0.0,
+            'copy_paste': 0.4 if not overfit else 0.0,
             
             # Training schedule
-            'cos_lr': True,      # Cosine LR schedule for smooth convergence
-            'close_mosaic': 20,  # Disable mosaic last 20 epochs for fine-tuning
-            'amp': True,         # Mixed Precision for speed & memory savings
-            'fraction': 1.0,     # Use all data
-            'patience': patience,
+            'cos_lr': True if not overfit else False,
+            'close_mosaic': 20 if not overfit else 0,
+            'amp': True,
+            'fraction': 1.0,
+            'patience': patience if not overfit else 0,  # No early stopping in overfit mode
             
             # Validation and saving
             'val': True,
@@ -292,21 +293,29 @@ class SimpleYOLOTrainer:
         }
         
         # Display configuration
-        print(f"\n⚙️  Training Configuration (Small Object Optimized):")
+        mode_label = "OVERFIT (Demo)" if overfit else "Small Object Optimized"
+        print(f"\n⚙️  Training Configuration ({mode_label}):")
         print(f"   Image Size: {imgsz}px {'(⚡ HIGH RES for small objects)' if imgsz >= 1280 else ''}")
         print(f"   Batch Size: {batch}")
         print(f"   Epochs: {epochs}")
         print(f"   Device: {self.device}")
         print(f"   Workers: 8")
         print(f"   Optimizer: AdamW")
-        print(f"   Learning Rate: {lr0} → {lr0 * 0.1} (initial → final)")
-        print(f"   Warmup: 10 epochs")
+        if overfit:
+            print(f"   Learning Rate: {train_args['lr0']} (constant, high for fast memorization)")
+            print(f"   Weight Decay: 0 (no regularization)")
+            print(f"   Augmentation: ALL DISABLED")
+            print(f"   Early Stopping: DISABLED")
+            print(f"   Warmup: 3 epochs")
+        else:
+            print(f"   Learning Rate: {lr0} → {lr0 * 0.1} (initial → final)")
+            print(f"   Warmup: 10 epochs")
+            print(f"   Early Stopping (Patience): {patience} epochs")
+            print(f"   Rotation: 180° (full aerial rotation)")
+            print(f"   Vertical Flip: Enabled (aerial top-down)")
+            print(f"   Copy-Paste: 0.4 (duplicates small fire/smoke objects)")
+            print(f"   Close Mosaic: last 20 epochs")
         print(f"   AMP (FP16): Enabled")
-        print(f"   Early Stopping (Patience): {patience} epochs")
-        print(f"   Rotation: 180° (full aerial rotation)")
-        print(f"   Vertical Flip: Enabled (aerial top-down)")
-        print(f"   Copy-Paste: 0.4 (duplicates small fire/smoke objects)")
-        print(f"   Close Mosaic: last 20 epochs")
         print(f"   ⚠️  High imgsz = more VRAM. Reduce batch if OOM.")
         
         print(f"\n{'='*80}")
@@ -387,6 +396,8 @@ def main():
                        help='Initial learning rate (default: 0.001)')
     parser.add_argument('--patience', type=int, default=120,
                        help='Early stopping patience in epochs (default: 120)')
+    parser.add_argument('--overfit', action='store_true',
+                       help='Overfit mode: disable augmentation & regularization for demo/simulator')
     parser.add_argument('--resume', action='store_true',
                        help='Resume from last checkpoint (skip training mode selection)')
     
@@ -415,7 +426,8 @@ def main():
         imgsz=args.imgsz,
         batch=args.batch,
         lr0=args.lr0,
-        patience=args.patience
+        patience=args.patience,
+        overfit=args.overfit
     )
 
 

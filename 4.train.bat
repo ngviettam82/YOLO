@@ -75,6 +75,26 @@ REM Prompt for patience
 set /p PATIENCE="Enter patience/early stopping epochs (default 120): "
 if "!PATIENCE!"=="" set PATIENCE=120
 
+REM Prompt for overfit mode
+echo.
+echo Training Modes:
+echo   [N] Normal   - Full augmentation, regularization, early stopping
+echo   [O] Overfit  - No augmentation, no regularization, memorize training data
+echo                   (best for CosysAirSim demo with known scenes)
+echo.
+set /p OVERFIT_MODE="Select mode [N/O] (default N): "
+if /i "!OVERFIT_MODE!"=="O" (
+    set OVERFIT_FLAG=--overfit
+    echo.
+    echo === OVERFIT MODE SELECTED ===
+    echo Augmentation: DISABLED
+    echo Early stopping: DISABLED
+    echo The model will memorize your training data.
+    echo.
+) else (
+    set OVERFIT_FLAG=
+)
+
 echo.
 echo [3/3] Starting training with your configuration...
 echo This will take several hours depending on your dataset size...
@@ -89,8 +109,10 @@ echo   Image Size: !IMGSZ!px
 echo   Batch Size: !BATCH!
 echo   Learning Rate: !LR0! ^-^> (final varies)
 echo   Patience: !PATIENCE! epochs
+if defined OVERFIT_FLAG echo   Mode: OVERFIT (demo/simulator)
+if not defined OVERFIT_FLAG echo   Mode: Normal (full augmentation)
 echo.
-python scripts\train_optimized.py --data dataset/data.yaml --epochs !EPOCHS! --imgsz !IMGSZ! --batch !BATCH! --lr0 !LR0! --patience !PATIENCE!
+python scripts\train_optimized.py --data dataset/data.yaml --epochs !EPOCHS! --imgsz !IMGSZ! --batch !BATCH! --lr0 !LR0! --patience !PATIENCE! !OVERFIT_FLAG!
 if errorlevel 1 (
     echo ERROR: Training failed!
     pause

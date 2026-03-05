@@ -53,3 +53,21 @@ hsv_v: 0.5             # Brightness - varies with lighting/time of day
 # GPU memory settings
 fraction: 0.95         # Use 95% of GPU memory
 amp: true              # Automatic Mixed Precision (FP16)
+
+# ==========================================================================
+# OVERFIT MODE (for CosysAirSim demo / simulator)
+# ==========================================================================
+# Enable via: python scripts/train_optimized.py --overfit
+# Or select "O" when prompted in 4.train.bat
+#
+# What it does:
+#   - Disables ALL augmentation (mosaic, mixup, copy-paste, flips, rotation, HSV)
+#   - Disables regularization (weight_decay = 0)
+#   - Disables early stopping (patience = 0)
+#   - Uses higher LR (0.01) for fast memorization
+#   - Model will memorize the training data exactly
+#
+# When to use:
+#   - Demoing fire detection in CosysAirSim with known scenes
+#   - Small dataset where you want perfect recall on training data
+#   - Verifying the training pipeline works before a real training run
