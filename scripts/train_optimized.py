@@ -234,7 +234,8 @@ class SimpleYOLOTrainer:
         if overfit:
             print(f"\n🎯 OVERFIT MODE ENABLED")
             print(f"   All augmentation DISABLED — model will memorize training data")
-            print(f"   Perfect for CosysAirSim demo with known scenes\n")
+            print(f"   Perfect for CosysAirSim demo with known scenes")
+            print(f"   LR: 0.002 (stable for small datasets), cosine decay to 0.0002\n")
 
         # Aerial small-object optimized training configuration
         train_args = {
@@ -249,11 +250,11 @@ class SimpleYOLOTrainer:
             
             # Optimizer
             'optimizer': 'AdamW',
-            'lr0': lr0 if not overfit else 0.01,
-            'lrf': (lr0 * 0.1) if not overfit else 0.01,
+            'lr0': lr0 if not overfit else 0.002,
+            'lrf': (lr0 * 0.1) if not overfit else 0.1,  # Overfit: decay to 10% of lr0 (0.0002)
             'momentum': 0.937,
             'weight_decay': 0.0005 if not overfit else 0.0,
-            'warmup_epochs': 10 if not overfit else 3,
+            'warmup_epochs': 10 if not overfit else 5,
             'warmup_momentum': 0.8,
             'warmup_bias_lr': 0.0,
             
@@ -273,7 +274,7 @@ class SimpleYOLOTrainer:
             'copy_paste': 0.4 if not overfit else 0.0,
             
             # Training schedule
-            'cos_lr': True if not overfit else False,
+            'cos_lr': True,  # Always use cosine decay — prevents LR explosion
             'close_mosaic': 20 if not overfit else 0,
             'amp': True,
             'fraction': 1.0,
@@ -302,11 +303,11 @@ class SimpleYOLOTrainer:
         print(f"   Workers: 8")
         print(f"   Optimizer: AdamW")
         if overfit:
-            print(f"   Learning Rate: {train_args['lr0']} (constant, high for fast memorization)")
+            print(f"   Learning Rate: {train_args['lr0']} → {train_args['lr0'] * 0.1} (cosine decay)")
             print(f"   Weight Decay: 0 (no regularization)")
             print(f"   Augmentation: ALL DISABLED")
             print(f"   Early Stopping: DISABLED")
-            print(f"   Warmup: 3 epochs")
+            print(f"   Warmup: 5 epochs")
         else:
             print(f"   Learning Rate: {lr0} → {lr0 * 0.1} (initial → final)")
             print(f"   Warmup: 10 epochs")
