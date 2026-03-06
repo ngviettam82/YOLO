@@ -104,7 +104,7 @@ class AutoLabelGUI:
             return False
     
     def load_model(self):
-        """Load YOLO model"""
+        """Load YOLO model and display its classes"""
         try:
             print(f"\n📦 Loading model: {self.model_path.name}")
             self.model = YOLO(str(self.model_path))
@@ -115,6 +115,15 @@ class AutoLabelGUI:
                 print(f"   Device: {torch.cuda.get_device_name(0)}")
             else:
                 print(f"   Device: CPU")
+            
+            # Display model classes
+            class_names = self.model.names  # dict: {0: 'fire', 1: 'smoke', ...}
+            print(f"   Classes in model ({len(class_names)}):")
+            for cls_id, cls_name in class_names.items():
+                print(f"     {cls_id}: {cls_name}")
+            
+            self.model_class_names = class_names
+            self.class_mapping = None  # Will be set by user if needed
             
             print(f"✅ Model loaded successfully")
             return True
@@ -132,12 +141,26 @@ class AutoLabelGUI:
         ]
         return sorted(image_files)
     
-    def run_auto_labeling(self, conf_threshold=0.25, iou_threshold=0.45):
-        """Run auto-labeling on all images"""
+    def run_auto_labeling(self, conf_threshold=0.25, iou_threshold=0.45, class_mapping=None):
+        """Run auto-labeling on all images
+        
+        Args:
+            conf_threshold: Confidence threshold for detection
+            iou_threshold: IOU threshold for NMS
+            class_mapping: dict mapping model class IDs to output class IDs.
+                          If None, all classes are exported with original IDs.
+        """
         try:
             print(f"\n{'='*80}")
             print(f"🚀 Starting Auto-Labeling")
             print(f"{'='*80}\n")
+            
+            if class_mapping:
+                print(f"📋 Class mapping (model ID → output ID):")
+                for model_id, output_id in sorted(class_mapping.items()):
+                    name = self.model_class_names.get(model_id, f"class_{model_id}")
+                    print(f"   {model_id} ({name}) → {output_id}")
+                print()
             
             # Get image files
             image_files = self.get_image_files()
@@ -176,8 +199,6 @@ class AutoLabelGUI:
                         
                         # Extract boxes
                         boxes = result.boxes
-                        detections = len(boxes)
-                        total_detections += detections
                         
                         # Create label file
                         label_file = self.output_folder / f"{image_file.stem}.txt"
@@ -187,6 +208,14 @@ class AutoLabelGUI:
                                 # Get class and confidence
                                 cls = int(box.cls[0])
                                 conf = float(box.conf[0])
+                                
+                                # Apply class mapping: skip classes not in mapping
+                                if class_mapping is not None:
+                                    if cls not in class_mapping:
+                                        continue  # Skip this class
+                                    output_cls = class_mapping[cls]
+                                else:
+                                    output_cls = cls
                                 
                                 # Get normalized coordinates (YOLO format)
                                 x_center = float(box.xywh[0][0]) / img_width
@@ -201,7 +230,8 @@ class AutoLabelGUI:
                                 height = max(0, min(1, height))
                                 
                                 # Write to file in YOLO format: class x_center y_center width height
-                                f.write(f"{cls} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}\n")
+                                f.write(f"{output_cls} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}\n")
+                                total_detections += 1
                         
                         successful += 1
                 
@@ -240,10 +270,10 @@ class AutoLabelGUI:
             return False
     
     def show_config_dialog(self):
-        """Show dialog for confidence and IOU thresholds"""
+        """Show dialog for confidence, IOU thresholds, and class selection"""
         config_window = tk.Tk()
         config_window.title("Auto-Labeling Configuration")
-        config_window.geometry("300x200")
+        config_window.geometry("500x550")
         
         # Confidence threshold
         tk.Label(config_window, text="Confidence Threshold:").pack(pady=5)
@@ -257,11 +287,71 @@ class AutoLabelGUI:
         tk.Scale(config_window, from_=0.0, to=1.0, resolution=0.05, 
                 orient=tk.HORIZONTAL, variable=iou_var).pack(fill=tk.X, padx=10)
         
-        result = {'ok': False, 'conf': 0.25, 'iou': 0.45}
+        # Class selection
+        tk.Label(config_window, text="─" * 60).pack()
+        tk.Label(config_window, text="Select classes to export (and remap output IDs):",
+                font=("Arial", 10, "bold")).pack(pady=5)
+        tk.Label(config_window, text="Check classes to include. 'Output ID' is the class ID written to label files.",
+                font=("Arial", 8)).pack()
+        
+        # Scrollable frame for classes
+        class_frame = tk.Frame(config_window)
+        class_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        canvas = tk.Canvas(class_frame, height=200)
+        scrollbar = tk.Scrollbar(class_frame, orient="vertical", command=canvas.yview)
+        scrollable = tk.Frame(canvas)
+        
+        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scrollable, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Header
+        header = tk.Frame(scrollable)
+        header.pack(fill=tk.X, pady=2)
+        tk.Label(header, text="Include", width=8, font=("Arial", 9, "bold")).pack(side=tk.LEFT)
+        tk.Label(header, text="Model Class", width=25, anchor="w", font=("Arial", 9, "bold")).pack(side=tk.LEFT)
+        tk.Label(header, text="Output ID", width=10, font=("Arial", 9, "bold")).pack(side=tk.LEFT)
+        
+        class_vars = {}  # {model_cls_id: (check_var, output_id_var)}
+        for cls_id, cls_name in sorted(self.model_class_names.items()):
+            row = tk.Frame(scrollable)
+            row.pack(fill=tk.X, pady=1)
+            
+            check_var = tk.BooleanVar(value=True)  # All selected by default
+            tk.Checkbutton(row, variable=check_var, width=5).pack(side=tk.LEFT)
+            tk.Label(row, text=f"{cls_id}: {cls_name}", width=25, anchor="w").pack(side=tk.LEFT)
+            
+            output_id_var = tk.StringVar(value=str(cls_id))  # Default: same as model ID
+            tk.Entry(row, textvariable=output_id_var, width=8).pack(side=tk.LEFT, padx=5)
+            
+            class_vars[cls_id] = (check_var, output_id_var)
+        
+        result = {'ok': False, 'conf': 0.25, 'iou': 0.45, 'class_mapping': None}
         
         def on_ok():
             result['conf'] = conf_var.get()
             result['iou'] = iou_var.get()
+            
+            # Build class mapping: {model_cls_id: output_cls_id} for selected classes
+            mapping = {}
+            for cls_id, (check_var, output_id_var) in class_vars.items():
+                if check_var.get():
+                    try:
+                        output_id = int(output_id_var.get())
+                        mapping[cls_id] = output_id
+                    except ValueError:
+                        messagebox.showerror("Error", f"Invalid output ID for class {cls_id}: {output_id_var.get()}")
+                        return
+            
+            if not mapping:
+                messagebox.showerror("Error", "At least one class must be selected!")
+                return
+            
+            result['class_mapping'] = mapping
             result['ok'] = True
             config_window.quit()
         
@@ -269,12 +359,13 @@ class AutoLabelGUI:
             config_window.quit()
         
         button_frame = tk.Frame(config_window)
-        button_frame.pack(pady=20)
+        button_frame.pack(pady=10)
         
         tk.Button(button_frame, text="Start", command=on_ok, width=10).pack(side=tk.LEFT, padx=5)
         tk.Button(button_frame, text="Cancel", command=on_cancel, width=10).pack(side=tk.LEFT, padx=5)
         
         config_window.mainloop()
+        config_window.destroy()
         
         return result
     
@@ -307,7 +398,11 @@ class AutoLabelGUI:
             return
         
         # Step 6: Run auto-labeling
-        self.run_auto_labeling(conf_threshold=config['conf'], iou_threshold=config['iou'])
+        self.run_auto_labeling(
+            conf_threshold=config['conf'], 
+            iou_threshold=config['iou'],
+            class_mapping=config.get('class_mapping')
+        )
 
 
 def main():
